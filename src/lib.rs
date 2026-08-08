@@ -21,6 +21,7 @@ pub mod mouse;
 pub mod parser;
 pub mod progress;
 pub mod sgr;
+pub mod screen;
 pub mod style;
 pub mod util;
 pub mod width;
@@ -91,6 +92,15 @@ pub use mouse::{
 pub use progress::{
     set_error_progress_bar, set_progress_bar, set_warning_progress_bar, RESET_PROGRESS_BAR,
     SET_INDETERMINATE_PROGRESS_BAR,
+};
+pub use screen::{
+    delete_character, delete_line, dch, decstbm, decslrm, deccir, dectabsr, decrqpsr, dl, ed,
+    el, erase_display, erase_line, ich, il, insert_character, insert_line, pan_down, pan_up,
+    repeat_previous_character, rep, request_presentation_state_report, scroll_down, scroll_up,
+    sd, su, set_left_right_margins, set_scrolling_region, set_top_bottom_margins, tab_clear,
+    tab_stop_report, tbc, DECST8C, ERASE_ENTIRE_DISPLAY, ERASE_ENTIRE_LINE,
+    ERASE_ENTIRE_SCREEN, ERASE_LINE_LEFT, ERASE_LINE_RIGHT, ERASE_SCREEN_ABOVE,
+    ERASE_SCREEN_BELOW, HORIZONTAL_TAB_SET, SET_TAB_EVERY_8_COLUMNS,
 };
 pub use sgr::{
     select_graphic_rendition, sgr, ATTR_BLINK, ATTR_BOLD, ATTR_CONCEAL,

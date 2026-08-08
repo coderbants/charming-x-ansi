@@ -26,7 +26,7 @@ no file is silently skipped.
 | `ansi/mouse.go` | `src/mouse.rs` | `MouseButton` + encoding, `EncodeMouseButton`, `MouseX10`, `MouseSgr` (ported at v0.11.7; the SGR/urxvt pixel *mode* constants live in `mode.go`) |
 | `ansi/mode.go`, `mode_deprecated.go`, `modes.go` | `src/mode.rs` | Terminal mode constants and helpers (ported at v0.11.7) |
 | `ansi/cursor.go` | `src/cursor.rs` | Cursor movement/position sequences (ported at v0.11.7; `SetCursorStyle` defined here) |
-| `ansi/screen.go` | `src/screen.rs` | Screen clear/size sequences |
+| `ansi/screen.go` | `src/screen.rs` | Ported at v0.11.7: erase/scroll/insert/delete/margins/tab/report sequences | Screen clear/size sequences |
 | `ansi/title.go` | `src/title.rs` | Window title sequences |
 | `ansi/title_test.go` | `src/title.rs` (tests) | Title tests |
 | `ansi/clipboard.go` | `src/clipboard.rs` | OSC52 clipboard sequences |
