@@ -18,6 +18,7 @@ pub mod kitty;
 pub mod method;
 pub mod mode;
 pub mod mouse;
+pub mod parser;
 pub mod progress;
 pub mod sgr;
 pub mod style;
@@ -51,6 +52,17 @@ pub use kitty::{
     KITTY_REPORT_ALTERNATE_KEYS, KITTY_REPORT_ASSOCIATED_KEYS, KITTY_REPORT_EVENT_TYPES,
 };
 pub use method::WidthMethod;
+pub use parser::{
+    decode_sequence, decode_sequence_wc, get_parser, has_apc_prefix,
+    has_csi_prefix, has_dcs_prefix, has_esc_prefix, has_osc_prefix, has_pm_prefix,
+    has_sos_prefix, has_st_prefix, new_parser, put_parser, APC, APC_STRING_STATE, BEL, BS, CAN,
+    CSI, CSI_ENTRY_STATE, CSI_INTERMEDIATE_STATE, CSI_PARAM_STATE, Cmd, DEL, DCS,
+    DCS_ENTRY_STATE, DCS_INTERMEDIATE_STATE, DCS_PARAM_STATE, DCS_STRING_STATE, ESC,
+    ESCAPE_INTERMEDIATE_STATE, ESCAPE_STATE, ESCAPE_STATE_DECODE, GROUND_STATE, HAS_MORE_FLAG,
+    Handler, INTERMED_STATE, LF, MAX_PARAMS_SIZE, MISSING_COMMAND, MISSING_PARAM, NORMAL_STATE,
+    OSC, OSC_STRING_STATE, PARAM_MASK, PARAMS_STATE, PM, PM_STRING_STATE, PREFIX_STATE, Param,
+    Params, Parser, SOS, SOS_STRING_STATE, SP, ST, STRING_STATE, SUB, UTF8_STATE,
+};
 pub use mode::{
     decrst, decset, decrpm, decrqm, report_mode, request_mode, reset_mode, rm, set_mode, sm,
     ANSIMode, DECMode, Mode, ModeSetting, Modes, BRACKETED_PASTE_MODE, DECAWM, DECBKM, DECCKM,

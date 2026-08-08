@@ -61,14 +61,15 @@ no file is silently skipped.
 | `ansi/focus.go` | `src/focus.rs` | Focus event sequences |
 | `ansi/winop.go` | `src/winop.rs` | Window manipulation sequences |
 | `ansi/ctrl.go` | `src/ctrl.rs` | Control function helpers |
-| `ansi/c0.go`, `ansi/c1.go`, `ansi/charset.go` | `src/ctrl.rs` | Control characters |
-| `ansi/ansi.go`, `ascii.go` | `src/ctrl.rs` | ANSI/ASCII helpers |
-| `ansi/parser.go`, `ansi/parser_decode.go`, `ansi/parser_handler.go`, `ansi/parser_sync.go` | `src/parser.rs` | ANSI parser API (not yet ported; v0.11.7 delta in `parser_decode.go` (method-aware width via `wcOptions`/`dwOptions`) and `parser_sync.go` (4MB -> 4KB pool data size) recorded for when the parser is ported) |
-| `ansi/parser/const.go`, `ansi/parser/seq.go`, `ansi/parser/transition_table.go` | `src/parser.rs` | Parser tables/constants |
-| `ansi/parser_test.go`, `ansi/parser_apc_test.go`, `ansi/parser_csi_test.go`, `ansi/parser_dcs_test.go`, `ansi/parser_decode_test.go`, `ansi/parser_esc_test.go`, `ansi/parser_osc_test.go` | `tests/parser_test.rs` | Parser suite (in progress) |
-| `ansi/parser_decode.go` | `src/parser.rs` | Sequence decoding |
-| `ansi/parser_handler.go` | `src/parser.rs` | Parser handlers |
-| `ansi/parser_sync.go` | `src/parser.rs` | Synchronized parser state |
+| `ansi/c0.go`, `ansi/c1.go` | `src/parser.rs` | C0/C1 control-character constants (NUL..US, PAD..APC, SP/DEL) |
+| `ansi/ansi.go`, `ascii.go` | `src/parser.rs` | `Execute` writer helper (ansi.go), SP/DEL constants (ascii.go) |
+| `ansi/charset.go` | `src/ctrl.rs` | Character set selection (deferred) |
+| `ansi/parser.go`, `ansi/parser_decode.go`, `ansi/parser_handler.go`, `ansi/parser_sync.go` | `src/parser.rs` | ANSI parser API: `Parser` state machine, `Handler`, `DecodeSequence`/`DecodeSequenceWc`, `GetParser`/`PutParser` (pool is a no-op perf optimization), `Cmd`/`Param`/`Params`/`Command`/`Parameter`, `FirstGraphemeCluster`, `Has*Prefix` helpers |
+| `ansi/parser/const.go`, `ansi/parser/seq.go`, `ansi/parser/transition_table.go` | `src/parser.rs` | Parser states/actions, packed-param constants/shifts, generated VT500 transition table |
+| `ansi/parser_test.go`, `ansi/parser_apc_test.go`, `ansi/parser_csi_test.go`, `ansi/parser_dcs_test.go`, `ansi/parser_decode_test.go`, `ansi/parser_esc_test.go`, `ansi/parser_osc_test.go` | `src/parser.rs` (tests) | Parser suite: 21 tests in module (state machine, decode vectors, OSC/DCS/CSI params, grapheme widths) |
+| `ansi/parser_decode.go` | `src/parser.rs` | Sequence decoding (DecodeSequence/DecodeSequenceWc) |
+| `ansi/parser_handler.go` | `src/parser.rs` | Parser handlers (Handler struct, Params/ToParams) |
+| `ansi/parser_sync.go` | `src/parser.rs` | Pooled parsers (GetParser/PutParser) |
 | `parser/const.go`, `parser/seq.go`, `parser/transition_table.go` | `src/parser.rs` | Parser tables/constants |
 | `ansi/gen.go` | (generated) | Table generator script; documented |
 | `ansi/fixtures/*` (UTF-8-demo.txt, demo.vte) | (test fixtures) | Parser test fixtures |

@@ -66,6 +66,12 @@ pub struct RGBColor {
     /// Blue component.
     pub b: u8,
 }
+impl RGBColor {
+    /// Hex returns the lowercase `#rrggbb` representation of the color.
+    pub fn hex(&self) -> String {
+        format!("#{:02x}{:02x}{:02x}", self.r, self.g, self.b)
+    }
+}
 
 /// The xterm-256 palette: 16 basic colors, a 6x6x6 color cube, and grayscale.
 pub fn indexed_rgb(c: u8) -> (u8, u8, u8) {
