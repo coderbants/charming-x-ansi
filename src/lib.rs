@@ -112,7 +112,7 @@ pub use sgr::{
     ATTR_NO_STRIKETHROUGH, ATTR_NO_UNDERLINE, ATTR_RAPID_BLINK, ATTR_RESET, ATTR_REVERSE,
     ATTR_RGB_COLOR_INTRODUCER, ATTR_STRIKETHROUGH, ATTR_UNDERLINE, Attr,
 };
-pub use style::{Color, Style, Underline, RESET_STYLE};
+pub use style::{read_style_color, Color, Style, Underline, RESET_STYLE};
 pub use util::{cut, cut_left, strip, string_width, truncate, truncate_left, x_parse_color};
 pub use width::first_grapheme_cluster;
 pub use wrap::{hardwrap, hardwrap_wc, wrap, wrap_wc};

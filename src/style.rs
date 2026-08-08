@@ -40,6 +40,227 @@ impl Default for Underline {
     }
 }
 
+/// ReadStyleColor reads an SGR color (38/48/58 extended color sequence) from
+/// the given parameters starting at index 0, returning the number of
+/// parameters consumed and the color.
+///
+/// NOTE: upstream returns Go `color.Color` values (RGB, CMYK); the port maps
+/// CMYK to RGB via the standard conversion and returns `Option<Color>`.
+pub fn read_style_color(params: &[i32], co: &mut Option<Color>) -> usize {
+    use crate::parser::{HAS_MORE_FLAG, MISSING_PARAM};
+
+    let has_more = |p: &i32| p & HAS_MORE_FLAG != 0;
+    let unpack = |p: i32, def: i32| -> i32 {
+        let v = p & !HAS_MORE_FLAG;
+        if v == MISSING_PARAM {
+            def
+        } else {
+            v
+        }
+    };
+
+    if params.len() < 2 {
+        // Need at least SGR type and color type
+        return 0;
+    }
+
+    // First parameter indicates one of 38, 48, or 58.
+    let s = params[0];
+    let p = params[1];
+    let color_type = unpack(p, 0);
+    let mut n = 2;
+
+    let paramsfn = |params: &[i32], n: &mut usize| -> (i32, i32, i32, i32) {
+        // Where should we start reading the color?
+        match () {
+            _ if has_more(&s)
+                && has_more(&p)
+                && params.len() > 8
+                && has_more(&params[2])
+                && has_more(&params[3])
+                && has_more(&params[4])
+                && has_more(&params[5])
+                && has_more(&params[6])
+                && has_more(&params[7]) =>
+            {
+                // We have color space id, a 6th parameter, a tolerance value,
+                // and a tolerance color space
+                *n += 7;
+                (
+                    unpack(params[3], 0),
+                    unpack(params[4], 0),
+                    unpack(params[5], 0),
+                    unpack(params[6], 0),
+                )
+            }
+            _ if has_more(&s)
+                && has_more(&p)
+                && params.len() > 7
+                && has_more(&params[2])
+                && has_more(&params[3])
+                && has_more(&params[4])
+                && has_more(&params[5])
+                && has_more(&params[6]) =>
+            {
+                // We have color space id, a 6th parameter, and a tolerance
+                // value
+                *n += 6;
+                (
+                    unpack(params[3], 0),
+                    unpack(params[4], 0),
+                    unpack(params[5], 0),
+                    unpack(params[6], 0),
+                )
+            }
+            _ if has_more(&s)
+                && has_more(&p)
+                && params.len() > 6
+                && has_more(&params[2])
+                && has_more(&params[3])
+                && has_more(&params[4])
+                && has_more(&params[5]) =>
+            {
+                // We have color space id and a 6th parameter
+                *n += 5;
+                (
+                    unpack(params[3], 0),
+                    unpack(params[4], 0),
+                    unpack(params[5], 0),
+                    unpack(params[6], 0),
+                )
+            }
+            _ if has_more(&s)
+                && has_more(&p)
+                && params.len() > 5
+                && has_more(&params[2])
+                && has_more(&params[3])
+                && has_more(&params[4])
+                && !has_more(&params[5]) =>
+            {
+                // We have color space
+                *n += 4;
+                (
+                    unpack(params[3], 0),
+                    unpack(params[4], 0),
+                    unpack(params[5], 0),
+                    -1,
+                )
+            }
+            _ if has_more(&s) && has_more(&p) && unpack(p, 0) == 2
+                && has_more(&params[2]) && has_more(&params[3]) && !has_more(&params[4]) =>
+            {
+                // We have color values separated by colons (:)
+                *n += 3;
+                (
+                    unpack(params[2], 0),
+                    unpack(params[3], 0),
+                    unpack(params[4], 0),
+                    -1,
+                )
+            }
+            _ if !has_more(&s) && !has_more(&p) && unpack(p, 0) == 2
+                && !has_more(&params[2]) && !has_more(&params[3]) && !has_more(&params[4]) =>
+            {
+                // Support legacy color values separated by semicolons (;)
+                *n += 3;
+                (
+                    unpack(params[2], 0),
+                    unpack(params[3], 0),
+                    unpack(params[4], 0),
+                    -1,
+                )
+            }
+            _ => {
+                // Ambiguous SGR color
+                (-1, -1, -1, -1)
+            }
+        }
+    };
+
+    match color_type {
+        0 => {
+            // implementation defined
+            *co = None;
+            2
+        }
+        1 => {
+            // transparent
+            *co = None;
+            2
+        }
+        2 => {
+            // RGB direct color
+            if params.len() < 5 {
+                return 0;
+            }
+
+            let mut n2 = n;
+            let (r, g, b, _) = paramsfn(params, &mut n2);
+            if r == -1 || g == -1 || b == -1 {
+                return 0;
+            }
+            n = n2;
+
+            *co = Some(Color::RGB(crate::color::RGBColor {
+                r: r as u8,
+                g: g as u8,
+                b: b as u8,
+            }));
+            n
+        }
+        3 => {
+            // CMY direct color
+            if params.len() < 5 {
+                return 0;
+            }
+
+            let mut n2 = n;
+            let (c, m, y, _) = paramsfn(params, &mut n2);
+            if c == -1 || m == -1 || y == -1 {
+                return 0;
+            }
+            n = n2;
+
+            // NOTE: upstream stores color.CMYK; converted to RGB here.
+            *co = Some(Color::RGB(crate::color::RGBColor {
+                r: 255 - c as u8,
+                g: 255 - m as u8,
+                b: 255 - y as u8,
+            }));
+            n
+        }
+        4 => {
+            // CMYK direct color
+            if params.len() < 6 {
+                return 0;
+            }
+
+            let mut n2 = n;
+            let (c, m, y, k) = paramsfn(params, &mut n2);
+            if c == -1 || m == -1 || y == -1 || k == -1 {
+                return 0;
+            }
+            n = n2;
+
+            // NOTE: upstream stores color.CMYK; converted to RGB here.
+            let (c, m, y, k) = (
+                c as f32 / 255.0,
+                m as f32 / 255.0,
+                y as f32 / 255.0,
+                k as f32 / 255.0,
+            );
+            let conv = |v: f32| (255.0 * (1.0 - v) * (1.0 - k)).round() as u8;
+            *co = Some(Color::RGB(crate::color::RGBColor {
+                r: conv(c),
+                g: conv(m),
+                b: conv(y),
+            }));
+            n
+        }
+        _ => 0,
+    }
+}
+
 /// An ANSI SGR style. A zero value renders nothing.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Style {
