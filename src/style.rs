@@ -257,6 +257,48 @@ pub fn read_style_color(params: &[i32], co: &mut Option<Color>) -> usize {
             }));
             n
         }
+        5 => {
+            // indexed color
+            if params.len() < 3 {
+                return 0;
+            }
+            match () {
+                _ if has_more(&s) && has_more(&p) && !has_more(&params[2]) => {
+                    // Colon separated indexed color
+                    // 38 : 5 : 234
+                }
+                _ if !has_more(&s) && !has_more(&p) && !has_more(&params[2]) => {
+                    // Legacy semicolon indexed color
+                    // 38 ; 5 ; 234
+                }
+                _ => return 0,
+            }
+            *co = Some(Color::Indexed(unpack(params[2], 0) as u8));
+            3
+        }
+        6 => {
+            // RGBA direct color
+            if params.len() < 6 {
+                return 0;
+            }
+
+            let mut n2 = n;
+            let (r, g, b, a) = paramsfn(params, &mut n2);
+            if r == -1 || g == -1 || b == -1 || a == -1 {
+                return 0;
+            }
+            n = n2;
+
+            *co = Some(Color::RGB(crate::color::RGBColor {
+                r: r as u8,
+                g: g as u8,
+                b: b as u8,
+            }));
+            // NOTE: upstream stores color.RGBA including alpha; the ported
+            // RGBColor has no alpha channel, so it is dropped.
+            let _ = a;
+            n
+        }
         _ => 0,
     }
 }
