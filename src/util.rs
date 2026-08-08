@@ -1,5 +1,5 @@
 //! Cleanroom Rust port of upstream Go source file: `ansi/util.go` and `ansi/width.go`
-//! Upstream Target Tag / Version: `v0.11.2`
+//! Upstream Target Tag / Version: `v0.11.7`
 //!
 //! <public-docs>
 //! ANSI-aware string utilities: stripping, cutting, truncation, and cell-width
@@ -8,18 +8,103 @@
 
 use unicode_width::UnicodeWidthChar;
 
+use crate::color::RGBColor;
+
 /// StringWidth returns the width of the string in cells, ignoring ANSI
 /// sequences and measuring wide characters correctly.
 pub fn string_width(s: &str) -> usize {
-    let s = strip(s);
-    s.lines()
-        .map(|line| {
-            line.chars()
-                .map(|c| UnicodeWidthChar::width(c).unwrap_or(0))
-                .sum()
-        })
-        .max()
-        .unwrap_or(0)
+    crate::width::string_width(s)
+}
+
+/// Shift reduces a 16-bit component value to 8 bits, mirroring the upstream
+/// `shift` helper.
+fn shift(v: u64) -> u8 {
+    if v > 0xff {
+        (v >> 8) as u8
+    } else {
+        v as u8
+    }
+}
+
+/// XParseColor is a helper function that parses a string into an RGB color.
+/// It provides a similar interface to the XParseColor function in Xlib. It
+/// supports the following formats:
+///
+/// - #RGB
+/// - #RRGGBB
+/// - rgb:RRRR/GGGG/BBBB
+/// - rgba:RRRR/GGGG/BBBB/AAAA
+///
+/// If the string is not a valid color, `None` is returned.
+///
+/// See: <https://linux.die.net/man/3/xparsecolor>
+pub fn x_parse_color(s: &str) -> Option<RGBColor> {
+    if let Some(hex) = s.strip_prefix('#') {
+        return match hex.len() {
+            3 => {
+                let nib = |i: usize| -> Option<u8> {
+                    u8::from_str_radix(&hex[i..i + 1], 16).ok()
+                };
+                let r = nib(0)?.checked_mul(17)?;
+                let g = nib(1)?.checked_mul(17)?;
+                let b = nib(2)?.checked_mul(17)?;
+                Some(RGBColor { r, g, b })
+            }
+            4 => {
+                let nib = |i: usize| -> Option<u8> {
+                    u8::from_str_radix(&hex[i..i + 1], 16).ok()
+                };
+                let r = nib(0)?.checked_mul(17)?;
+                let g = nib(1)?.checked_mul(17)?;
+                let b = nib(2)?.checked_mul(17)?;
+                Some(RGBColor { r, g, b })
+            }
+            6 => {
+                let pair = |i: usize| -> Option<u8> {
+                    u8::from_str_radix(&hex[i..i + 2], 16).ok()
+                };
+                let r = pair(0)?;
+                let g = pair(2)?;
+                let b = pair(4)?;
+                Some(RGBColor { r, g, b })
+            }
+            8 => {
+                let pair = |i: usize| -> Option<u8> {
+                    u8::from_str_radix(&hex[i..i + 2], 16).ok()
+                };
+                let r = pair(0)?;
+                let g = pair(2)?;
+                let b = pair(4)?;
+                Some(RGBColor { r, g, b })
+            }
+            _ => None,
+        };
+    }
+    if let Some(rest) = s.strip_prefix("rgb:") {
+        let parts: Vec<&str> = rest.split('/').collect();
+        if parts.len() != 3 {
+            return None;
+        }
+        let comp = |p: &str| shift(u64::from_str_radix(p, 16).unwrap_or(0));
+        return Some(RGBColor {
+            r: comp(parts[0]),
+            g: comp(parts[1]),
+            b: comp(parts[2]),
+        });
+    }
+    if let Some(rest) = s.strip_prefix("rgba:") {
+        let parts: Vec<&str> = rest.split('/').collect();
+        if parts.len() != 4 {
+            return None;
+        }
+        let comp = |p: &str| shift(u64::from_str_radix(p, 16).unwrap_or(0));
+        return Some(RGBColor {
+            r: comp(parts[0]),
+            g: comp(parts[1]),
+            b: comp(parts[2]),
+        });
+    }
+    None
 }
 
 /// Strips ANSI escape sequences from the given string.
@@ -203,5 +288,36 @@ mod tests {
     fn test_truncate() {
         assert_eq!(truncate("hello world", 5, "…"), "hell…");
         assert_eq!(truncate("hello world", 8, "…"), "hello w…");
+    }
+
+    #[test]
+    fn test_x_parse_color() {
+        assert_eq!(
+            x_parse_color("#ff0000"),
+            Some(RGBColor { r: 0xff, g: 0x00, b: 0x00 })
+        );
+        assert_eq!(
+            x_parse_color("#f00"),
+            Some(RGBColor { r: 0xff, g: 0x00, b: 0x00 })
+        );
+        assert_eq!(
+            x_parse_color("#0000ff"),
+            Some(RGBColor { r: 0x00, g: 0x00, b: 0xff })
+        );
+        assert_eq!(
+            x_parse_color("rgb:ffff/8080/0000"),
+            Some(RGBColor { r: 0xff, g: 0x80, b: 0x00 })
+        );
+        assert_eq!(
+            x_parse_color("rgba:ffff/0000/0000/ffff"),
+            Some(RGBColor { r: 0xff, g: 0x00, b: 0x00 })
+        );
+        assert_eq!(x_parse_color("notacolor"), None);
+        assert_eq!(x_parse_color("#12345"), None);
+        assert_eq!(
+            x_parse_color("rgb:ff/00/00"),
+            Some(RGBColor { r: 0xff, g: 0x00, b: 0x00 })
+        );
+        assert_eq!(x_parse_color("rgb:ff/00"), None);
     }
 }

@@ -1,5 +1,5 @@
 //! Cleanroom Rust port of upstream Go source file: `ansi/wrap.go`
-//! Upstream Target Tag / Version: `v0.11.2`
+//! Upstream Target Tag / Version: `v0.11.7`
 //!
 //! <public-docs>
 //! Word wrapping that preserves ANSI escape sequences and wide characters.

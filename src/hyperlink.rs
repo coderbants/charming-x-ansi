@@ -1,5 +1,5 @@
 //! Cleanroom Rust port of upstream Go source file: `ansi/hyperlink.go`
-//! Upstream Target Tag / Version: `v0.11.2`
+//! Upstream Target Tag / Version: `v0.11.7`
 //!
 //! <public-docs>
 //! OSC 8 hyperlink sequences.

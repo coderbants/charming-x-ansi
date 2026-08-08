@@ -1,5 +1,5 @@
 //! Cleanroom Rust port of upstream Go source file: `ansi/color.go`
-//! Upstream Target Tag / Version: `v0.11.2`
+//! Upstream Target Tag / Version: `v0.11.7`
 //!
 //! <public-docs>
 //! Terminal color types and palette conversion (xterm-256 and 16-color).
@@ -7,6 +7,51 @@
 
 /// BasicColor is a 4-bit ANSI color (0-15).
 pub type BasicColor = u8;
+
+/// The ANSI black color. `0`.
+pub const BLACK: BasicColor = 0;
+/// The ANSI red color. `1`.
+pub const RED: BasicColor = 1;
+/// The ANSI green color. `2`.
+pub const GREEN: BasicColor = 2;
+/// The ANSI yellow color. `3`.
+pub const YELLOW: BasicColor = 3;
+/// The ANSI blue color. `4`.
+pub const BLUE: BasicColor = 4;
+/// The ANSI magenta color. `5`.
+pub const MAGENTA: BasicColor = 5;
+/// The ANSI cyan color. `6`.
+pub const CYAN: BasicColor = 6;
+/// The ANSI white color. `7`.
+pub const WHITE: BasicColor = 7;
+/// The ANSI bright black color. `8`.
+pub const BRIGHT_BLACK: BasicColor = 8;
+/// The ANSI bright red color. `9`.
+pub const BRIGHT_RED: BasicColor = 9;
+/// The ANSI bright green color. `10`.
+pub const BRIGHT_GREEN: BasicColor = 10;
+/// The ANSI bright yellow color. `11`.
+pub const BRIGHT_YELLOW: BasicColor = 11;
+/// The ANSI bright blue color. `12`.
+pub const BRIGHT_BLUE: BasicColor = 12;
+/// The ANSI bright magenta color. `13`.
+pub const BRIGHT_MAGENTA: BasicColor = 13;
+/// The ANSI bright cyan color. `14`.
+pub const BRIGHT_CYAN: BasicColor = 14;
+/// The ANSI bright white color. `15`.
+pub const BRIGHT_WHITE: BasicColor = 15;
+
+/// ExtendedColor is an ANSI 256 (8-bit) color with a value from 0 to 255.
+///
+/// Deprecated: use [IndexedColor] instead.
+pub type ExtendedColor = IndexedColor;
+
+/// TrueColor is a 24-bit color that can be used in the terminal.
+/// This can be used to represent RGB colors. For example, the color red can be
+/// represented as `0xff0000`.
+///
+/// Deprecated: use [RGBColor] instead.
+pub type TrueColor = u32;
 
 /// IndexedColor is an 8-bit ANSI color (0-255).
 pub type IndexedColor = u8;

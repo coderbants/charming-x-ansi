@@ -1,5 +1,5 @@
 //! Cleanroom Rust port of upstream Go source file: `ansi/style.go`
-//! Upstream Target Tag / Version: `v0.11.2`
+//! Upstream Target Tag / Version: `v0.11.7`
 //!
 //! <public-docs>
 //! An ANSI SGR style builder. Output sequences match upstream byte-for-byte.
@@ -67,10 +67,14 @@ pub struct Style {
     pub ul_color: Option<Color>,
 }
 
-/// A terminal color: a 4-bit basic color, an 8-bit indexed color, or a 24-bit
-/// RGB color.
+/// A terminal color: the default color, a 4-bit basic color, an 8-bit indexed
+/// color, or a 24-bit RGB color.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Color {
+    /// The terminal's default color (SGR 39/49/59). Mirrors a nil color in
+    /// upstream, which renders the terminal default foreground, background, or
+    /// underline color.
+    Default,
     /// 16-color ANSI code (0-15).
     Basic(BasicColor),
     /// 256-color ANSI code (0-255).
@@ -146,6 +150,7 @@ impl Style {
 
 fn color_seq(c: &Color, base: u8) -> String {
     match c {
+        Color::Default => format!("{}9", base),
         Color::Basic(v) => {
             if *v < 8 {
                 format!("{}", base * 10 + v)
@@ -192,5 +197,14 @@ mod tests {
         s.underline_style = Underline::Curly;
         s.ul_color = Some(Color::RGB(RGBColor { r: 255, g: 0, b: 0 }));
         assert_eq!(s.string(), "\x1b[4;58;2;255;0;0;4:3m");
+    }
+
+    #[test]
+    fn test_nil_colors() {
+        let mut s = Style::default();
+        s.fg_color = Some(Color::Default);
+        s.bg_color = Some(Color::Default);
+        s.ul_color = Some(Color::Default);
+        assert_eq!(s.string(), "\x1b[39;49;59m");
     }
 }
