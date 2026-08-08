@@ -65,6 +65,9 @@ pub use parser::{
     Params, Parser, SOS, SOS_STRING_STATE, SP, ST, STRING_STATE, SUB, UTF8_STATE,
 };
 pub use mode::{
+    ENABLE_MODIFY_OTHER_KEYS2, RESET_MODIFY_OTHER_KEYS,
+};
+pub use mode::{
     decrst, decset, decrpm, decrqm, report_mode, request_mode, reset_mode, rm, set_mode, sm,
     ANSIMode, DECMode, Mode, ModeSetting, Modes, BRACKETED_PASTE_MODE, DECAWM, DECBKM, DECCKM,
     DECLRMM, DECNKM, DECOM, DECTCEM, HIDE_CURSOR, IRM, KAM, LNM, MODE_ALT_SCREEN,
@@ -97,8 +100,8 @@ pub use screen::{
     delete_character, delete_line, dch, decstbm, decslrm, deccir, dectabsr, decrqpsr, dl, ed,
     el, erase_display, erase_line, ich, il, insert_character, insert_line, pan_down, pan_up,
     repeat_previous_character, rep, request_presentation_state_report, scroll_down, scroll_up,
-    sd, su, set_left_right_margins, set_scrolling_region, set_top_bottom_margins, tab_clear,
-    tab_stop_report, tbc, DECST8C, ERASE_ENTIRE_DISPLAY, ERASE_ENTIRE_LINE,
+    sd, set_left_right_margins, set_scrolling_region, set_top_bottom_margins, set_window_title,
+    su, tab_clear, tab_stop_report, tbc, DECST8C, ERASE_ENTIRE_DISPLAY, ERASE_ENTIRE_LINE,
     ERASE_ENTIRE_SCREEN, ERASE_LINE_LEFT, ERASE_LINE_RIGHT, ERASE_SCREEN_ABOVE,
     ERASE_SCREEN_BELOW, HORIZONTAL_TAB_SET, SET_TAB_EVERY_8_COLUMNS,
 };

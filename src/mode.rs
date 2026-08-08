@@ -1186,6 +1186,14 @@ impl Modes {
     }
 }
 
+/// ResetModifyOtherKeys disables modifyOtherKeys.
+///
+/// NOTE: upstream this lives in `ansi/xterm.go`; folded here.
+pub const RESET_MODIFY_OTHER_KEYS: &str = "\x1b[>4m";
+
+/// EnableModifyOtherKeys2 enables modifyOtherKeys mode 2.
+pub const ENABLE_MODIFY_OTHER_KEYS2: &str = "\x1b[>4;2m";
+
 #[cfg(test)]
 mod tests {
     use super::*;

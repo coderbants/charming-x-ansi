@@ -258,6 +258,16 @@ pub const SET_TAB_EVERY_8_COLUMNS: &str = "\x1b[?5W";
 /// DECST8C is an alias for [SET_TAB_EVERY_8_COLUMNS].
 pub const DECST8C: &str = SET_TAB_EVERY_8_COLUMNS;
 
+/// SetWindowTitle returns a sequence for setting the window title.
+///
+/// `OSC 2 ; title ST` / `OSC 2 ; title BEL`
+///
+/// NOTE: upstream this lives in `ansi/title.go`; folded here with the other
+/// OSC-style screen sequences.
+pub fn set_window_title(s: &str) -> String {
+    format!("\x1b]2;{s}\x07")
+}
+
 /// HorizontalTabSet (HTS) sets a horizontal tab stop at the current cursor
 /// column.
 ///
