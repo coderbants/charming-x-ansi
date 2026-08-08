@@ -1,0 +1,17 @@
+[package]
+name = "charming-x-ansi"
+version = "0.11.2"
+edition = "2021"
+description = "Cleanroom Rust port of Charmbracelet's x/ansi module (v0.11.2) from the charmbracelet/x monorepo"
+license = "MIT"
+
+[dependencies]
+unicode-segmentation = "1.10.1"
+unicode-width = "0.1"
+libc = "0.2"
+
+[dev-dependencies]
+
+[lib]
+name = "charming_x_ansi"
+path = "src/lib.rs"
