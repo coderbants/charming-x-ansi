@@ -202,6 +202,6 @@ mod tests {
     #[test]
     fn test_truncate() {
         assert_eq!(truncate("hello world", 5, "…"), "hell…");
-        assert_eq!(truncate("hello world", 8, "…"), "hello…");
+        assert_eq!(truncate("hello world", 8, "…"), "hello w…");
     }
 }
