@@ -55,7 +55,7 @@ no file is silently skipped.
 | `ansi/passthrough.go` | `src/passthrough.rs` | DCS passthrough |
 | `ansi/passthrough_test.go` | `src/passthrough.rs` (tests) | Passthrough tests |
 | `ansi/paste.go` | `src/paste.rs` | Bracketed paste |
-| `ansi/background.go` | `src/background.rs` | Background color queries; also `SetForegroundColor`/`ResetForegroundColor`, `SetBackgroundColor`/`ResetBackgroundColor`, `SetCursorColor`/`ResetCursorColor` (OSC 10/11/12, deferred) |
+| `ansi/background.go` | `src/background.rs` | Ported at v0.11.7: OSC 10/11/12 sequences + HexColor/XRGBColor/XRGBAColor | |
 | `ansi/background_test.go` | `src/background.rs` (tests) | Background tests |
 | `ansi/finalterm.go` | `src/finalterm.rs` | FinalTerm sequences |
 | `ansi/focus.go` | `src/focus.rs` | Focus event sequences |
@@ -140,5 +140,5 @@ lipgloss/bubbletea/ultraviolet@20260703) and is published under the pseudo-versi
 | --- | --- |
 | `ansi/style.go`, `color.go`, `util.go`, `width.go`, `wrap.go`, `truncate.go`, `hyperlink.go`, `method.go`, `kitty.go` (flags) | Ported & Tested at v0.11.7 |
 | `ansi/sgr.go`, `mouse.go`, `mode.go`, `mode_deprecated.go`, `modes.go`, `cursor.go`, `progress.go` | Ported & Tested at v0.11.7 (incl. `sgr_test.go`, `mouse_test.go`, `mode_test.go`, `progress_test.go` as inline tests) |
-| `ansi/screen.go`, `title.go`, `reset.go`, `clipboard.go`, `background.go` (holds `SetForegroundColor`/`SetBackgroundColor`/`SetCursorColor` OSC 10/11/12 sequences), remaining sequences | Pending (documented above) |
+| `ansi/screen.go`, `title.go`, `reset.go`, `clipboard.go`, remaining sequences | Pending (documented above) |
 | `parser*.go`, `kitty/*` (decoder/encoder/graphics), `sixel/*`, `iterm2/*`, remaining sequences | Pending (documented above); `parser_decode.go`/`parser_sync.go` v0.11.7 deltas noted, not yet ported |

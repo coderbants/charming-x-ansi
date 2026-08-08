@@ -10,6 +10,7 @@
 
 #![deny(unsafe_code)]
 
+pub mod background;
 pub mod color;
 pub mod cursor;
 pub mod hyperlink;
@@ -24,6 +25,11 @@ pub mod util;
 pub mod width;
 pub mod wrap;
 
+pub use background::{
+    HexColor, REQUEST_BACKGROUND_COLOR, REQUEST_CURSOR_COLOR, REQUEST_FOREGROUND_COLOR,
+    RESET_BACKGROUND_COLOR, RESET_CURSOR_COLOR, RESET_FOREGROUND_COLOR, XRGBAColor,
+    XRGBColor, set_background_color, set_cursor_color, set_foreground_color,
+};
 pub use color::{
     ansi256_to_16, convert_16, convert_256, BasicColor, IndexedColor, RGBColor, BLUE,
     BRIGHT_BLACK, BRIGHT_BLUE, BRIGHT_CYAN, BRIGHT_GREEN, BRIGHT_MAGENTA, BRIGHT_RED,
