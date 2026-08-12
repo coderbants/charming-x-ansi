@@ -5,6 +5,7 @@
     <img src="https://user-images.githubusercontent.com/25087/236529178-465e9b98-3401-47dd-8691-ea475d96c3ad.png" height="200" alt="A 3D rendering of an X"/>
   </picture><br>
   <a href="https://crates.io/crates/charming-x-ansi"><img src="https://img.shields.io/crates/v/charming-x-ansi.svg" alt="crates.io"></a>
+    <a href="https://github.com/coderbants/charming-x-ansi/actions"><img src="https://github.com/coderbants/charming-x-ansi/actions/workflows/ci.yml/badge.svg" alt="Build Status"></a>
 </p>
 
 # Charming X/ANSI (`charming-x-ansi`)
@@ -55,13 +56,6 @@ We'd love to hear your thoughts on this project. Feel free to drop us a note!
 
 [MIT](https://github.com/charmbracelet/x/raw/main/LICENSE)
 
----
-
-Part of [Charm](https://charm.sh).
-
-<a href="https://charm.sh/"><img alt="The Charm logo" src="https://stuff.charm.sh/charm-badge.jpg" width="400"></a>
-
-Charm热爱开源 • Charm loves open source • نحنُ نحب المصادر المفتوحة
 
 ## Installation
 
@@ -71,3 +65,30 @@ cargo add charming-x-ansi
 
 Cleanroom Rust port of the [`ansi`](https://github.com/charmbracelet/x/tree/main/ansi) package:
 ANSI escape sequence parsing, SGR styling, width/wrap utilities and terminal queries.
+
+
+## Usage
+
+Style text with the ANSI SGR style builder, and parse escape sequences with
+the incremental parser:
+
+```rust
+use charming_x_ansi::style::{Color, Style};
+use charming_x_ansi::color::RGBColor;
+
+// Build an SGR style and wrap a string in it.
+let mut style = Style::default();
+style.bold = true;
+style.fg_color = Some(Color::RGB(RGBColor { r: 255, g: 0, b: 0 }));
+println!("{}", style.styled("red and bold")); // [1;38;2;255;0;0mred and bold[m
+
+// Parse an escape stream into sequences and printable runes.
+let mut p = charming_x_ansi::parser::new_parser();
+let decoded = charming_x_ansi::parser::decode_sequence(b"\x1b[31mred", 0, Some(&mut p));
+assert_eq!(decoded.seq, b"\x1b[31m"); // the CSI sequence
+assert_eq!(decoded.width, 3);          // width of the printable rune
+```
+
+The crate also provides width/wrap utilities (`charming_x_ansi::width`,
+`charming_x_ansi::wrap`) and terminal queries (background/foreground color,
+cursor color, terminal version) used throughout the Charming port family.
