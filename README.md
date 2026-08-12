@@ -1,12 +1,17 @@
-# x
-
 <p>
   <picture>
     <source media="(prefers-color-scheme: light)" srcset="https://user-images.githubusercontent.com/25087/236529178-465e9b98-3401-47dd-8691-ea475d96c3ad.png" height="200" />
     <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/25087/236529273-6f8c841f-f11b-4ec8-b01d-7e3d9b17c85f.png" height="200" />
     <img src="https://user-images.githubusercontent.com/25087/236529178-465e9b98-3401-47dd-8691-ea475d96c3ad.png" height="200" alt="A 3D rendering of an X"/>
-  </picture>
+  </picture><br>
+  <a href="https://crates.io/crates/charming-x-ansi"><img src="https://img.shields.io/crates/v/charming-x-ansi.svg" alt="crates.io"></a>
 </p>
+
+# Charming X/ANSI (`charming-x-ansi`)
+
+**Charming X/ANSI** is a complete, from-scratch Rust port of the [`ansi`](https://github.com/charmbracelet/x/tree/main/ansi) package from Charmbracelet's `x` monorepo — ANSI escape sequence parsing, SGR styling, width/wrap utilities and terminal queries. It tracks upstream on a rolling basis (this crate mirrors the upstream pseudo-version pin `20260703014108`) with the same **1:1 parity** goals as the rest of the Charming port family, favoring fidelity to upstream semantics over Rust-native rewrites.
+
+It's part of the Charming port family of the Bubble Tea ecosystem and underpins [charming-ultraviolet](https://github.com/coderbants/charming-ultraviolet), [charming-lipgloss](https://github.com/coderbants/charming-lipgloss), [charming-colorprofile](https://github.com/coderbants/charming-colorprofile), [charming-bubbles](https://github.com/coderbants/charming-bubbles) and [charming-bubbletea](https://github.com/coderbants/charming-bubbletea).
 
 This repository contains experimental packages with no promises of
 backwards compatibility. Once they mature here, they might be moved
