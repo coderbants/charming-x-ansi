@@ -25,7 +25,10 @@ mod tests {
 
     #[test]
     fn test_set_hyperlink() {
-        assert_eq!(set_hyperlink("https://example.com", ""), "\x1b]8;;https://example.com\x07");
+        assert_eq!(
+            set_hyperlink("https://example.com", ""),
+            "\x1b]8;;https://example.com\x07"
+        );
         assert_eq!(
             set_hyperlink("https://example.com", "id=1"),
             "\x1b]8;id=1;https://example.com\x07"

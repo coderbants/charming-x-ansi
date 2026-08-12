@@ -72,7 +72,11 @@ pub fn kitty_keyboard(flags: u8, mode: u8) -> String {
 ///
 /// See: <https://sw.kovidgoyal.net/kitty/keyboard-protocol/#progressive-enhancement>
 pub fn push_kitty_keyboard(flags: u8) -> String {
-    let f = if flags > 0 { flags.to_string() } else { String::new() };
+    let f = if flags > 0 {
+        flags.to_string()
+    } else {
+        String::new()
+    };
     format!("\x1b[>{}u", f)
 }
 

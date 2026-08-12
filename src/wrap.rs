@@ -249,8 +249,10 @@ mod tests {
 
     #[test]
     fn test_wrap_basic() {
-        assert_eq!(wrap("The quick brown fox jumps over the lazy dog", 10, ""),
-            "The quick\nbrown fox\njumps over\nthe lazy\ndog");
+        assert_eq!(
+            wrap("The quick brown fox jumps over the lazy dog", 10, ""),
+            "The quick\nbrown fox\njumps over\nthe lazy\ndog"
+        );
     }
 
     #[test]

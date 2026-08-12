@@ -18,9 +18,10 @@ pub const RESET_STYLE: &str = "\x1b[m";
 /// - Not all terminals support all underline styles.
 /// - Some terminals may render unsupported styles as standard underlines.
 /// - Terminal themes may affect the visibility of different underline styles.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Underline {
     /// No underline.
+    #[default]
     None,
     /// A single underline. This is the default when underline is enabled.
     Single,
@@ -32,12 +33,6 @@ pub enum Underline {
     Dotted,
     /// A dashed underline.
     Dashed,
-}
-
-impl Default for Underline {
-    fn default() -> Self {
-        Underline::None
-    }
 }
 
 /// ReadStyleColor reads an SGR color (38/48/58 extended color sequence) from
@@ -146,8 +141,12 @@ pub fn read_style_color(params: &[i32], co: &mut Option<Color>) -> usize {
                     -1,
                 )
             }
-            _ if has_more(&s) && has_more(&p) && unpack(p, 0) == 2
-                && has_more(&params[2]) && has_more(&params[3]) && !has_more(&params[4]) =>
+            _ if has_more(&s)
+                && has_more(&p)
+                && unpack(p, 0) == 2
+                && has_more(&params[2])
+                && has_more(&params[3])
+                && !has_more(&params[4]) =>
             {
                 // We have color values separated by colons (:)
                 *n += 3;
@@ -158,8 +157,12 @@ pub fn read_style_color(params: &[i32], co: &mut Option<Color>) -> usize {
                     -1,
                 )
             }
-            _ if !has_more(&s) && !has_more(&p) && unpack(p, 0) == 2
-                && !has_more(&params[2]) && !has_more(&params[3]) && !has_more(&params[4]) =>
+            _ if !has_more(&s)
+                && !has_more(&p)
+                && unpack(p, 0) == 2
+                && !has_more(&params[2])
+                && !has_more(&params[3])
+                && !has_more(&params[4]) =>
             {
                 // Support legacy color values separated by semicolons (;)
                 *n += 3;
@@ -433,42 +436,58 @@ mod tests {
 
     #[test]
     fn test_sgr_sequences() {
-        let mut s = Style::default();
-        s.bold = true;
+        let s = Style {
+            bold: true,
+            ..Default::default()
+        };
         assert_eq!(s.string(), "\x1b[1m");
         assert_eq!(s.styled("hello"), "\x1b[1mhello\x1b[m");
 
-        let mut s = Style::default();
-        s.fg_color = Some(Color::RGB(RGBColor { r: 90, g: 86, b: 224 }));
+        let s = Style {
+            fg_color: Some(Color::RGB(RGBColor {
+                r: 90,
+                g: 86,
+                b: 224,
+            })),
+            ..Default::default()
+        };
         assert_eq!(s.string(), "\x1b[38;2;90;86;224m");
         assert_eq!(s.styled("hello"), "\x1b[38;2;90;86;224mhello\x1b[m");
     }
 
     #[test]
     fn test_underline_styles() {
-        let mut s = Style::default();
-        s.underline = true;
-        s.underline_style = Underline::Single;
+        let s = Style {
+            underline: true,
+            underline_style: Underline::Single,
+            ..Default::default()
+        };
         assert_eq!(s.string(), "\x1b[4;4m");
 
-        let mut s = Style::default();
-        s.underline = true;
-        s.underline_style = Underline::Curly;
+        let s = Style {
+            underline: true,
+            underline_style: Underline::Curly,
+            ..Default::default()
+        };
         assert_eq!(s.string(), "\x1b[4;4:3m");
 
-        let mut s = Style::default();
-        s.underline = true;
-        s.underline_style = Underline::Curly;
-        s.ul_color = Some(Color::RGB(RGBColor { r: 255, g: 0, b: 0 }));
+        let s = Style {
+            underline: true,
+            underline_style: Underline::Curly,
+            ul_color: Some(Color::RGB(RGBColor { r: 255, g: 0, b: 0 })),
+            ..Default::default()
+        };
         assert_eq!(s.string(), "\x1b[4;58;2;255;0;0;4:3m");
     }
 
     #[test]
     fn test_nil_colors() {
-        let mut s = Style::default();
-        s.fg_color = Some(Color::Default);
-        s.bg_color = Some(Color::Default);
-        s.ul_color = Some(Color::Default);
+        let s = Style {
+            fg_color: Some(Color::Default),
+            bg_color: Some(Color::Default),
+            ul_color: Some(Color::Default),
+            ..Default::default()
+        };
         assert_eq!(s.string(), "\x1b[39;49;59m");
     }
 }

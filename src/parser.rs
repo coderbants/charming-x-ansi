@@ -137,7 +137,10 @@ fn transition(state: State, code: u8) -> (State, Action) {
     let table = transition_table();
     let index = (state as usize) << INDEX_STATE_SHIFT | code as usize;
     let value = table[index];
-    (value & TRANSITION_STATE_MASK, value >> TRANSITION_ACTION_SHIFT)
+    (
+        value & TRANSITION_STATE_MASK,
+        value >> TRANSITION_ACTION_SHIFT,
+    )
 }
 
 fn transition_table() -> &'static [u8; DEFAULT_TABLE_SIZE] {
@@ -155,7 +158,13 @@ fn generate_transition_table() -> Box<[u8; DEFAULT_TABLE_SIZE]> {
     // Anywhere
     for state in GROUND_STATE..=UTF8_STATE {
         // Anywhere -> Ground
-        add_many(&mut table, &[0x18, 0x1a, 0x99, 0x9a], state, EXECUTE_ACTION, GROUND_STATE);
+        add_many(
+            &mut table,
+            &[0x18, 0x1a, 0x99, 0x9a],
+            state,
+            EXECUTE_ACTION,
+            GROUND_STATE,
+        );
         add_range(&mut table, 0x80, 0x8F, state, EXECUTE_ACTION, GROUND_STATE);
         add_range(&mut table, 0x90, 0x97, state, EXECUTE_ACTION, GROUND_STATE);
         add_one(&mut table, 0x9C, state, EXECUTE_ACTION, GROUND_STATE);
@@ -180,45 +189,202 @@ fn generate_transition_table() -> Box<[u8; DEFAULT_TABLE_SIZE]> {
     }
 
     // Ground
-    add_range(&mut table, 0x00, 0x17, GROUND_STATE, EXECUTE_ACTION, GROUND_STATE);
+    add_range(
+        &mut table,
+        0x00,
+        0x17,
+        GROUND_STATE,
+        EXECUTE_ACTION,
+        GROUND_STATE,
+    );
     add_one(&mut table, 0x19, GROUND_STATE, EXECUTE_ACTION, GROUND_STATE);
-    add_range(&mut table, 0x1C, 0x1F, GROUND_STATE, EXECUTE_ACTION, GROUND_STATE);
-    add_range(&mut table, 0x20, 0x7E, GROUND_STATE, PRINT_ACTION, GROUND_STATE);
+    add_range(
+        &mut table,
+        0x1C,
+        0x1F,
+        GROUND_STATE,
+        EXECUTE_ACTION,
+        GROUND_STATE,
+    );
+    add_range(
+        &mut table,
+        0x20,
+        0x7E,
+        GROUND_STATE,
+        PRINT_ACTION,
+        GROUND_STATE,
+    );
     add_one(&mut table, 0x7F, GROUND_STATE, EXECUTE_ACTION, GROUND_STATE);
 
     // EscapeIntermediate
-    add_range(&mut table, 0x00, 0x17, ESCAPE_INTERMEDIATE_STATE, EXECUTE_ACTION, ESCAPE_INTERMEDIATE_STATE);
-    add_one(&mut table, 0x19, ESCAPE_INTERMEDIATE_STATE, EXECUTE_ACTION, ESCAPE_INTERMEDIATE_STATE);
-    add_range(&mut table, 0x1C, 0x1F, ESCAPE_INTERMEDIATE_STATE, EXECUTE_ACTION, ESCAPE_INTERMEDIATE_STATE);
-    add_range(&mut table, 0x20, 0x2F, ESCAPE_INTERMEDIATE_STATE, COLLECT_ACTION, ESCAPE_INTERMEDIATE_STATE);
-    add_one(&mut table, 0x7F, ESCAPE_INTERMEDIATE_STATE, IGNORE_ACTION, ESCAPE_INTERMEDIATE_STATE);
+    add_range(
+        &mut table,
+        0x00,
+        0x17,
+        ESCAPE_INTERMEDIATE_STATE,
+        EXECUTE_ACTION,
+        ESCAPE_INTERMEDIATE_STATE,
+    );
+    add_one(
+        &mut table,
+        0x19,
+        ESCAPE_INTERMEDIATE_STATE,
+        EXECUTE_ACTION,
+        ESCAPE_INTERMEDIATE_STATE,
+    );
+    add_range(
+        &mut table,
+        0x1C,
+        0x1F,
+        ESCAPE_INTERMEDIATE_STATE,
+        EXECUTE_ACTION,
+        ESCAPE_INTERMEDIATE_STATE,
+    );
+    add_range(
+        &mut table,
+        0x20,
+        0x2F,
+        ESCAPE_INTERMEDIATE_STATE,
+        COLLECT_ACTION,
+        ESCAPE_INTERMEDIATE_STATE,
+    );
+    add_one(
+        &mut table,
+        0x7F,
+        ESCAPE_INTERMEDIATE_STATE,
+        IGNORE_ACTION,
+        ESCAPE_INTERMEDIATE_STATE,
+    );
     // EscapeIntermediate -> Ground
-    add_range(&mut table, 0x30, 0x7E, ESCAPE_INTERMEDIATE_STATE, DISPATCH_ACTION, GROUND_STATE);
+    add_range(
+        &mut table,
+        0x30,
+        0x7E,
+        ESCAPE_INTERMEDIATE_STATE,
+        DISPATCH_ACTION,
+        GROUND_STATE,
+    );
 
     // Escape
-    add_range(&mut table, 0x00, 0x17, ESCAPE_STATE, EXECUTE_ACTION, ESCAPE_STATE);
+    add_range(
+        &mut table,
+        0x00,
+        0x17,
+        ESCAPE_STATE,
+        EXECUTE_ACTION,
+        ESCAPE_STATE,
+    );
     add_one(&mut table, 0x19, ESCAPE_STATE, EXECUTE_ACTION, ESCAPE_STATE);
-    add_range(&mut table, 0x1C, 0x1F, ESCAPE_STATE, EXECUTE_ACTION, ESCAPE_STATE);
+    add_range(
+        &mut table,
+        0x1C,
+        0x1F,
+        ESCAPE_STATE,
+        EXECUTE_ACTION,
+        ESCAPE_STATE,
+    );
     add_one(&mut table, 0x7F, ESCAPE_STATE, IGNORE_ACTION, ESCAPE_STATE);
     // Escape -> Ground
-    add_range(&mut table, 0x30, 0x4F, ESCAPE_STATE, DISPATCH_ACTION, GROUND_STATE);
-    add_range(&mut table, 0x51, 0x57, ESCAPE_STATE, DISPATCH_ACTION, GROUND_STATE);
-    add_one(&mut table, 0x59, ESCAPE_STATE, DISPATCH_ACTION, GROUND_STATE);
-    add_one(&mut table, 0x5A, ESCAPE_STATE, DISPATCH_ACTION, GROUND_STATE);
-    add_one(&mut table, 0x5C, ESCAPE_STATE, DISPATCH_ACTION, GROUND_STATE);
-    add_range(&mut table, 0x60, 0x7E, ESCAPE_STATE, DISPATCH_ACTION, GROUND_STATE);
+    add_range(
+        &mut table,
+        0x30,
+        0x4F,
+        ESCAPE_STATE,
+        DISPATCH_ACTION,
+        GROUND_STATE,
+    );
+    add_range(
+        &mut table,
+        0x51,
+        0x57,
+        ESCAPE_STATE,
+        DISPATCH_ACTION,
+        GROUND_STATE,
+    );
+    add_one(
+        &mut table,
+        0x59,
+        ESCAPE_STATE,
+        DISPATCH_ACTION,
+        GROUND_STATE,
+    );
+    add_one(
+        &mut table,
+        0x5A,
+        ESCAPE_STATE,
+        DISPATCH_ACTION,
+        GROUND_STATE,
+    );
+    add_one(
+        &mut table,
+        0x5C,
+        ESCAPE_STATE,
+        DISPATCH_ACTION,
+        GROUND_STATE,
+    );
+    add_range(
+        &mut table,
+        0x60,
+        0x7E,
+        ESCAPE_STATE,
+        DISPATCH_ACTION,
+        GROUND_STATE,
+    );
     // Escape -> Escape_intermediate
-    add_range(&mut table, 0x20, 0x2F, ESCAPE_STATE, COLLECT_ACTION, ESCAPE_INTERMEDIATE_STATE);
+    add_range(
+        &mut table,
+        0x20,
+        0x2F,
+        ESCAPE_STATE,
+        COLLECT_ACTION,
+        ESCAPE_INTERMEDIATE_STATE,
+    );
     // Escape -> Sos_pm_apc_string
-    add_one(&mut table, b'X', ESCAPE_STATE, START_ACTION, SOS_STRING_STATE);
-    add_one(&mut table, b'^', ESCAPE_STATE, START_ACTION, PM_STRING_STATE);
-    add_one(&mut table, b'_', ESCAPE_STATE, START_ACTION, APC_STRING_STATE);
+    add_one(
+        &mut table,
+        b'X',
+        ESCAPE_STATE,
+        START_ACTION,
+        SOS_STRING_STATE,
+    );
+    add_one(
+        &mut table,
+        b'^',
+        ESCAPE_STATE,
+        START_ACTION,
+        PM_STRING_STATE,
+    );
+    add_one(
+        &mut table,
+        b'_',
+        ESCAPE_STATE,
+        START_ACTION,
+        APC_STRING_STATE,
+    );
     // Escape -> Dcs_entry
-    add_one(&mut table, b'P', ESCAPE_STATE, CLEAR_ACTION, DCS_ENTRY_STATE);
+    add_one(
+        &mut table,
+        b'P',
+        ESCAPE_STATE,
+        CLEAR_ACTION,
+        DCS_ENTRY_STATE,
+    );
     // Escape -> Csi_entry
-    add_one(&mut table, b'[', ESCAPE_STATE, CLEAR_ACTION, CSI_ENTRY_STATE);
+    add_one(
+        &mut table,
+        b'[',
+        ESCAPE_STATE,
+        CLEAR_ACTION,
+        CSI_ENTRY_STATE,
+    );
     // Escape -> Osc_string
-    add_one(&mut table, b']', ESCAPE_STATE, START_ACTION, OSC_STRING_STATE);
+    add_one(
+        &mut table,
+        b']',
+        ESCAPE_STATE,
+        START_ACTION,
+        OSC_STRING_STATE,
+    );
 
     // Sos_pm_apc_string
     for state in SOS_STRING_STATE..=APC_STRING_STATE {
@@ -229,124 +395,595 @@ fn generate_transition_table() -> Box<[u8; DEFAULT_TABLE_SIZE]> {
         // ESC, ST, CAN, and SUB terminate the sequence
         add_one(&mut table, 0x1B, state, DISPATCH_ACTION, ESCAPE_STATE);
         add_one(&mut table, 0x9C, state, DISPATCH_ACTION, GROUND_STATE);
-        add_many(&mut table, &[0x18, 0x1A], state, IGNORE_ACTION, GROUND_STATE);
+        add_many(
+            &mut table,
+            &[0x18, 0x1A],
+            state,
+            IGNORE_ACTION,
+            GROUND_STATE,
+        );
     }
 
     // Dcs_entry
-    add_range(&mut table, 0x00, 0x07, DCS_ENTRY_STATE, IGNORE_ACTION, DCS_ENTRY_STATE);
-    add_range(&mut table, 0x0E, 0x17, DCS_ENTRY_STATE, IGNORE_ACTION, DCS_ENTRY_STATE);
-    add_one(&mut table, 0x19, DCS_ENTRY_STATE, IGNORE_ACTION, DCS_ENTRY_STATE);
-    add_range(&mut table, 0x1C, 0x1F, DCS_ENTRY_STATE, IGNORE_ACTION, DCS_ENTRY_STATE);
-    add_one(&mut table, 0x7F, DCS_ENTRY_STATE, IGNORE_ACTION, DCS_ENTRY_STATE);
+    add_range(
+        &mut table,
+        0x00,
+        0x07,
+        DCS_ENTRY_STATE,
+        IGNORE_ACTION,
+        DCS_ENTRY_STATE,
+    );
+    add_range(
+        &mut table,
+        0x0E,
+        0x17,
+        DCS_ENTRY_STATE,
+        IGNORE_ACTION,
+        DCS_ENTRY_STATE,
+    );
+    add_one(
+        &mut table,
+        0x19,
+        DCS_ENTRY_STATE,
+        IGNORE_ACTION,
+        DCS_ENTRY_STATE,
+    );
+    add_range(
+        &mut table,
+        0x1C,
+        0x1F,
+        DCS_ENTRY_STATE,
+        IGNORE_ACTION,
+        DCS_ENTRY_STATE,
+    );
+    add_one(
+        &mut table,
+        0x7F,
+        DCS_ENTRY_STATE,
+        IGNORE_ACTION,
+        DCS_ENTRY_STATE,
+    );
     // Dcs_entry -> Dcs_intermediate
-    add_range(&mut table, 0x20, 0x2F, DCS_ENTRY_STATE, COLLECT_ACTION, DCS_INTERMEDIATE_STATE);
+    add_range(
+        &mut table,
+        0x20,
+        0x2F,
+        DCS_ENTRY_STATE,
+        COLLECT_ACTION,
+        DCS_INTERMEDIATE_STATE,
+    );
     // Dcs_entry -> Dcs_param
-    add_range(&mut table, 0x30, 0x3B, DCS_ENTRY_STATE, PARAM_ACTION, DCS_PARAM_STATE);
-    add_range(&mut table, 0x3C, 0x3F, DCS_ENTRY_STATE, PREFIX_ACTION, DCS_PARAM_STATE);
+    add_range(
+        &mut table,
+        0x30,
+        0x3B,
+        DCS_ENTRY_STATE,
+        PARAM_ACTION,
+        DCS_PARAM_STATE,
+    );
+    add_range(
+        &mut table,
+        0x3C,
+        0x3F,
+        DCS_ENTRY_STATE,
+        PREFIX_ACTION,
+        DCS_PARAM_STATE,
+    );
     // Dcs_entry -> Dcs_passthrough
-    add_range(&mut table, 0x08, 0x0D, DCS_ENTRY_STATE, PUT_ACTION, DCS_STRING_STATE);
-    add_one(&mut table, 0x1B, DCS_ENTRY_STATE, PUT_ACTION, DCS_STRING_STATE);
-    add_range(&mut table, 0x40, 0x7E, DCS_ENTRY_STATE, START_ACTION, DCS_STRING_STATE);
+    add_range(
+        &mut table,
+        0x08,
+        0x0D,
+        DCS_ENTRY_STATE,
+        PUT_ACTION,
+        DCS_STRING_STATE,
+    );
+    add_one(
+        &mut table,
+        0x1B,
+        DCS_ENTRY_STATE,
+        PUT_ACTION,
+        DCS_STRING_STATE,
+    );
+    add_range(
+        &mut table,
+        0x40,
+        0x7E,
+        DCS_ENTRY_STATE,
+        START_ACTION,
+        DCS_STRING_STATE,
+    );
 
     // Dcs_intermediate
-    add_range(&mut table, 0x00, 0x17, DCS_INTERMEDIATE_STATE, IGNORE_ACTION, DCS_INTERMEDIATE_STATE);
-    add_one(&mut table, 0x19, DCS_INTERMEDIATE_STATE, IGNORE_ACTION, DCS_INTERMEDIATE_STATE);
-    add_range(&mut table, 0x1C, 0x1F, DCS_INTERMEDIATE_STATE, IGNORE_ACTION, DCS_INTERMEDIATE_STATE);
-    add_range(&mut table, 0x20, 0x2F, DCS_INTERMEDIATE_STATE, COLLECT_ACTION, DCS_INTERMEDIATE_STATE);
-    add_one(&mut table, 0x7F, DCS_INTERMEDIATE_STATE, IGNORE_ACTION, DCS_INTERMEDIATE_STATE);
+    add_range(
+        &mut table,
+        0x00,
+        0x17,
+        DCS_INTERMEDIATE_STATE,
+        IGNORE_ACTION,
+        DCS_INTERMEDIATE_STATE,
+    );
+    add_one(
+        &mut table,
+        0x19,
+        DCS_INTERMEDIATE_STATE,
+        IGNORE_ACTION,
+        DCS_INTERMEDIATE_STATE,
+    );
+    add_range(
+        &mut table,
+        0x1C,
+        0x1F,
+        DCS_INTERMEDIATE_STATE,
+        IGNORE_ACTION,
+        DCS_INTERMEDIATE_STATE,
+    );
+    add_range(
+        &mut table,
+        0x20,
+        0x2F,
+        DCS_INTERMEDIATE_STATE,
+        COLLECT_ACTION,
+        DCS_INTERMEDIATE_STATE,
+    );
+    add_one(
+        &mut table,
+        0x7F,
+        DCS_INTERMEDIATE_STATE,
+        IGNORE_ACTION,
+        DCS_INTERMEDIATE_STATE,
+    );
     // Dcs_intermediate -> Dcs_passthrough
-    add_range(&mut table, 0x30, 0x3F, DCS_INTERMEDIATE_STATE, START_ACTION, DCS_STRING_STATE);
-    add_range(&mut table, 0x40, 0x7E, DCS_INTERMEDIATE_STATE, START_ACTION, DCS_STRING_STATE);
+    add_range(
+        &mut table,
+        0x30,
+        0x3F,
+        DCS_INTERMEDIATE_STATE,
+        START_ACTION,
+        DCS_STRING_STATE,
+    );
+    add_range(
+        &mut table,
+        0x40,
+        0x7E,
+        DCS_INTERMEDIATE_STATE,
+        START_ACTION,
+        DCS_STRING_STATE,
+    );
 
     // Dcs_param
-    add_range(&mut table, 0x00, 0x17, DCS_PARAM_STATE, IGNORE_ACTION, DCS_PARAM_STATE);
-    add_one(&mut table, 0x19, DCS_PARAM_STATE, IGNORE_ACTION, DCS_PARAM_STATE);
-    add_range(&mut table, 0x1C, 0x1F, DCS_PARAM_STATE, IGNORE_ACTION, DCS_PARAM_STATE);
-    add_range(&mut table, 0x30, 0x3B, DCS_PARAM_STATE, PARAM_ACTION, DCS_PARAM_STATE);
-    add_one(&mut table, 0x7F, DCS_PARAM_STATE, IGNORE_ACTION, DCS_PARAM_STATE);
-    add_range(&mut table, 0x3C, 0x3F, DCS_PARAM_STATE, IGNORE_ACTION, DCS_PARAM_STATE);
+    add_range(
+        &mut table,
+        0x00,
+        0x17,
+        DCS_PARAM_STATE,
+        IGNORE_ACTION,
+        DCS_PARAM_STATE,
+    );
+    add_one(
+        &mut table,
+        0x19,
+        DCS_PARAM_STATE,
+        IGNORE_ACTION,
+        DCS_PARAM_STATE,
+    );
+    add_range(
+        &mut table,
+        0x1C,
+        0x1F,
+        DCS_PARAM_STATE,
+        IGNORE_ACTION,
+        DCS_PARAM_STATE,
+    );
+    add_range(
+        &mut table,
+        0x30,
+        0x3B,
+        DCS_PARAM_STATE,
+        PARAM_ACTION,
+        DCS_PARAM_STATE,
+    );
+    add_one(
+        &mut table,
+        0x7F,
+        DCS_PARAM_STATE,
+        IGNORE_ACTION,
+        DCS_PARAM_STATE,
+    );
+    add_range(
+        &mut table,
+        0x3C,
+        0x3F,
+        DCS_PARAM_STATE,
+        IGNORE_ACTION,
+        DCS_PARAM_STATE,
+    );
     // Dcs_param -> Dcs_intermediate
-    add_range(&mut table, 0x20, 0x2F, DCS_PARAM_STATE, COLLECT_ACTION, DCS_INTERMEDIATE_STATE);
+    add_range(
+        &mut table,
+        0x20,
+        0x2F,
+        DCS_PARAM_STATE,
+        COLLECT_ACTION,
+        DCS_INTERMEDIATE_STATE,
+    );
     // Dcs_param -> Dcs_passthrough
-    add_range(&mut table, 0x40, 0x7E, DCS_PARAM_STATE, START_ACTION, DCS_STRING_STATE);
+    add_range(
+        &mut table,
+        0x40,
+        0x7E,
+        DCS_PARAM_STATE,
+        START_ACTION,
+        DCS_STRING_STATE,
+    );
 
     // Dcs_passthrough
-    add_range(&mut table, 0x00, 0x17, DCS_STRING_STATE, PUT_ACTION, DCS_STRING_STATE);
-    add_one(&mut table, 0x19, DCS_STRING_STATE, PUT_ACTION, DCS_STRING_STATE);
-    add_range(&mut table, 0x1C, 0x1F, DCS_STRING_STATE, PUT_ACTION, DCS_STRING_STATE);
-    add_range(&mut table, 0x20, 0x7E, DCS_STRING_STATE, PUT_ACTION, DCS_STRING_STATE);
-    add_one(&mut table, 0x7F, DCS_STRING_STATE, PUT_ACTION, DCS_STRING_STATE);
-    add_range(&mut table, 0x80, 0xFF, DCS_STRING_STATE, PUT_ACTION, DCS_STRING_STATE);
+    add_range(
+        &mut table,
+        0x00,
+        0x17,
+        DCS_STRING_STATE,
+        PUT_ACTION,
+        DCS_STRING_STATE,
+    );
+    add_one(
+        &mut table,
+        0x19,
+        DCS_STRING_STATE,
+        PUT_ACTION,
+        DCS_STRING_STATE,
+    );
+    add_range(
+        &mut table,
+        0x1C,
+        0x1F,
+        DCS_STRING_STATE,
+        PUT_ACTION,
+        DCS_STRING_STATE,
+    );
+    add_range(
+        &mut table,
+        0x20,
+        0x7E,
+        DCS_STRING_STATE,
+        PUT_ACTION,
+        DCS_STRING_STATE,
+    );
+    add_one(
+        &mut table,
+        0x7F,
+        DCS_STRING_STATE,
+        PUT_ACTION,
+        DCS_STRING_STATE,
+    );
+    add_range(
+        &mut table,
+        0x80,
+        0xFF,
+        DCS_STRING_STATE,
+        PUT_ACTION,
+        DCS_STRING_STATE,
+    );
     // ST, CAN, SUB, and ESC terminate the sequence
-    add_one(&mut table, 0x1B, DCS_STRING_STATE, DISPATCH_ACTION, ESCAPE_STATE);
-    add_one(&mut table, 0x9C, DCS_STRING_STATE, DISPATCH_ACTION, GROUND_STATE);
-    add_many(&mut table, &[0x18, 0x1A], DCS_STRING_STATE, IGNORE_ACTION, GROUND_STATE);
+    add_one(
+        &mut table,
+        0x1B,
+        DCS_STRING_STATE,
+        DISPATCH_ACTION,
+        ESCAPE_STATE,
+    );
+    add_one(
+        &mut table,
+        0x9C,
+        DCS_STRING_STATE,
+        DISPATCH_ACTION,
+        GROUND_STATE,
+    );
+    add_many(
+        &mut table,
+        &[0x18, 0x1A],
+        DCS_STRING_STATE,
+        IGNORE_ACTION,
+        GROUND_STATE,
+    );
 
     // Csi_param
-    add_range(&mut table, 0x00, 0x17, CSI_PARAM_STATE, EXECUTE_ACTION, CSI_PARAM_STATE);
-    add_one(&mut table, 0x19, CSI_PARAM_STATE, EXECUTE_ACTION, CSI_PARAM_STATE);
-    add_range(&mut table, 0x1C, 0x1F, CSI_PARAM_STATE, EXECUTE_ACTION, CSI_PARAM_STATE);
-    add_range(&mut table, 0x30, 0x3B, CSI_PARAM_STATE, PARAM_ACTION, CSI_PARAM_STATE);
-    add_one(&mut table, 0x7F, CSI_PARAM_STATE, IGNORE_ACTION, CSI_PARAM_STATE);
-    add_range(&mut table, 0x3C, 0x3F, CSI_PARAM_STATE, IGNORE_ACTION, CSI_PARAM_STATE);
+    add_range(
+        &mut table,
+        0x00,
+        0x17,
+        CSI_PARAM_STATE,
+        EXECUTE_ACTION,
+        CSI_PARAM_STATE,
+    );
+    add_one(
+        &mut table,
+        0x19,
+        CSI_PARAM_STATE,
+        EXECUTE_ACTION,
+        CSI_PARAM_STATE,
+    );
+    add_range(
+        &mut table,
+        0x1C,
+        0x1F,
+        CSI_PARAM_STATE,
+        EXECUTE_ACTION,
+        CSI_PARAM_STATE,
+    );
+    add_range(
+        &mut table,
+        0x30,
+        0x3B,
+        CSI_PARAM_STATE,
+        PARAM_ACTION,
+        CSI_PARAM_STATE,
+    );
+    add_one(
+        &mut table,
+        0x7F,
+        CSI_PARAM_STATE,
+        IGNORE_ACTION,
+        CSI_PARAM_STATE,
+    );
+    add_range(
+        &mut table,
+        0x3C,
+        0x3F,
+        CSI_PARAM_STATE,
+        IGNORE_ACTION,
+        CSI_PARAM_STATE,
+    );
     // Csi_param -> Ground
-    add_range(&mut table, 0x40, 0x7E, CSI_PARAM_STATE, DISPATCH_ACTION, GROUND_STATE);
+    add_range(
+        &mut table,
+        0x40,
+        0x7E,
+        CSI_PARAM_STATE,
+        DISPATCH_ACTION,
+        GROUND_STATE,
+    );
     // Csi_param -> Csi_intermediate
-    add_range(&mut table, 0x20, 0x2F, CSI_PARAM_STATE, COLLECT_ACTION, CSI_INTERMEDIATE_STATE);
+    add_range(
+        &mut table,
+        0x20,
+        0x2F,
+        CSI_PARAM_STATE,
+        COLLECT_ACTION,
+        CSI_INTERMEDIATE_STATE,
+    );
 
     // Csi_intermediate
-    add_range(&mut table, 0x00, 0x17, CSI_INTERMEDIATE_STATE, EXECUTE_ACTION, CSI_INTERMEDIATE_STATE);
-    add_one(&mut table, 0x19, CSI_INTERMEDIATE_STATE, EXECUTE_ACTION, CSI_INTERMEDIATE_STATE);
-    add_range(&mut table, 0x1C, 0x1F, CSI_INTERMEDIATE_STATE, EXECUTE_ACTION, CSI_INTERMEDIATE_STATE);
-    add_range(&mut table, 0x20, 0x2F, CSI_INTERMEDIATE_STATE, COLLECT_ACTION, CSI_INTERMEDIATE_STATE);
-    add_one(&mut table, 0x7F, CSI_INTERMEDIATE_STATE, IGNORE_ACTION, CSI_INTERMEDIATE_STATE);
+    add_range(
+        &mut table,
+        0x00,
+        0x17,
+        CSI_INTERMEDIATE_STATE,
+        EXECUTE_ACTION,
+        CSI_INTERMEDIATE_STATE,
+    );
+    add_one(
+        &mut table,
+        0x19,
+        CSI_INTERMEDIATE_STATE,
+        EXECUTE_ACTION,
+        CSI_INTERMEDIATE_STATE,
+    );
+    add_range(
+        &mut table,
+        0x1C,
+        0x1F,
+        CSI_INTERMEDIATE_STATE,
+        EXECUTE_ACTION,
+        CSI_INTERMEDIATE_STATE,
+    );
+    add_range(
+        &mut table,
+        0x20,
+        0x2F,
+        CSI_INTERMEDIATE_STATE,
+        COLLECT_ACTION,
+        CSI_INTERMEDIATE_STATE,
+    );
+    add_one(
+        &mut table,
+        0x7F,
+        CSI_INTERMEDIATE_STATE,
+        IGNORE_ACTION,
+        CSI_INTERMEDIATE_STATE,
+    );
     // Csi_intermediate -> Ground
-    add_range(&mut table, 0x40, 0x7E, CSI_INTERMEDIATE_STATE, DISPATCH_ACTION, GROUND_STATE);
+    add_range(
+        &mut table,
+        0x40,
+        0x7E,
+        CSI_INTERMEDIATE_STATE,
+        DISPATCH_ACTION,
+        GROUND_STATE,
+    );
     // Csi_intermediate -> Csi_ignore
-    add_range(&mut table, 0x30, 0x3F, CSI_INTERMEDIATE_STATE, IGNORE_ACTION, GROUND_STATE);
+    add_range(
+        &mut table,
+        0x30,
+        0x3F,
+        CSI_INTERMEDIATE_STATE,
+        IGNORE_ACTION,
+        GROUND_STATE,
+    );
 
     // Csi_entry
-    add_range(&mut table, 0x00, 0x17, CSI_ENTRY_STATE, EXECUTE_ACTION, CSI_ENTRY_STATE);
-    add_one(&mut table, 0x19, CSI_ENTRY_STATE, EXECUTE_ACTION, CSI_ENTRY_STATE);
-    add_range(&mut table, 0x1C, 0x1F, CSI_ENTRY_STATE, EXECUTE_ACTION, CSI_ENTRY_STATE);
-    add_one(&mut table, 0x7F, CSI_ENTRY_STATE, IGNORE_ACTION, CSI_ENTRY_STATE);
+    add_range(
+        &mut table,
+        0x00,
+        0x17,
+        CSI_ENTRY_STATE,
+        EXECUTE_ACTION,
+        CSI_ENTRY_STATE,
+    );
+    add_one(
+        &mut table,
+        0x19,
+        CSI_ENTRY_STATE,
+        EXECUTE_ACTION,
+        CSI_ENTRY_STATE,
+    );
+    add_range(
+        &mut table,
+        0x1C,
+        0x1F,
+        CSI_ENTRY_STATE,
+        EXECUTE_ACTION,
+        CSI_ENTRY_STATE,
+    );
+    add_one(
+        &mut table,
+        0x7F,
+        CSI_ENTRY_STATE,
+        IGNORE_ACTION,
+        CSI_ENTRY_STATE,
+    );
     // Csi_entry -> Ground
-    add_range(&mut table, 0x40, 0x7E, CSI_ENTRY_STATE, DISPATCH_ACTION, GROUND_STATE);
+    add_range(
+        &mut table,
+        0x40,
+        0x7E,
+        CSI_ENTRY_STATE,
+        DISPATCH_ACTION,
+        GROUND_STATE,
+    );
     // Csi_entry -> Csi_intermediate
-    add_range(&mut table, 0x20, 0x2F, CSI_ENTRY_STATE, COLLECT_ACTION, CSI_INTERMEDIATE_STATE);
+    add_range(
+        &mut table,
+        0x20,
+        0x2F,
+        CSI_ENTRY_STATE,
+        COLLECT_ACTION,
+        CSI_INTERMEDIATE_STATE,
+    );
     // Csi_entry -> Csi_param
-    add_range(&mut table, 0x30, 0x3B, CSI_ENTRY_STATE, PARAM_ACTION, CSI_PARAM_STATE);
-    add_range(&mut table, 0x3C, 0x3F, CSI_ENTRY_STATE, PREFIX_ACTION, CSI_PARAM_STATE);
+    add_range(
+        &mut table,
+        0x30,
+        0x3B,
+        CSI_ENTRY_STATE,
+        PARAM_ACTION,
+        CSI_PARAM_STATE,
+    );
+    add_range(
+        &mut table,
+        0x3C,
+        0x3F,
+        CSI_ENTRY_STATE,
+        PREFIX_ACTION,
+        CSI_PARAM_STATE,
+    );
 
     // Osc_string
-    add_range(&mut table, 0x00, 0x06, OSC_STRING_STATE, IGNORE_ACTION, OSC_STRING_STATE);
-    add_range(&mut table, 0x08, 0x17, OSC_STRING_STATE, IGNORE_ACTION, OSC_STRING_STATE);
-    add_one(&mut table, 0x19, OSC_STRING_STATE, IGNORE_ACTION, OSC_STRING_STATE);
-    add_range(&mut table, 0x1C, 0x1F, OSC_STRING_STATE, IGNORE_ACTION, OSC_STRING_STATE);
-    add_range(&mut table, 0x20, 0xFF, OSC_STRING_STATE, PUT_ACTION, OSC_STRING_STATE);
+    add_range(
+        &mut table,
+        0x00,
+        0x06,
+        OSC_STRING_STATE,
+        IGNORE_ACTION,
+        OSC_STRING_STATE,
+    );
+    add_range(
+        &mut table,
+        0x08,
+        0x17,
+        OSC_STRING_STATE,
+        IGNORE_ACTION,
+        OSC_STRING_STATE,
+    );
+    add_one(
+        &mut table,
+        0x19,
+        OSC_STRING_STATE,
+        IGNORE_ACTION,
+        OSC_STRING_STATE,
+    );
+    add_range(
+        &mut table,
+        0x1C,
+        0x1F,
+        OSC_STRING_STATE,
+        IGNORE_ACTION,
+        OSC_STRING_STATE,
+    );
+    add_range(
+        &mut table,
+        0x20,
+        0xFF,
+        OSC_STRING_STATE,
+        PUT_ACTION,
+        OSC_STRING_STATE,
+    );
 
     // ST, CAN, SUB, ESC, and BEL terminate the sequence
-    add_one(&mut table, 0x1B, OSC_STRING_STATE, DISPATCH_ACTION, ESCAPE_STATE);
-    add_one(&mut table, 0x07, OSC_STRING_STATE, DISPATCH_ACTION, GROUND_STATE);
-    add_one(&mut table, 0x9C, OSC_STRING_STATE, DISPATCH_ACTION, GROUND_STATE);
-    add_many(&mut table, &[0x18, 0x1A], OSC_STRING_STATE, IGNORE_ACTION, GROUND_STATE);
+    add_one(
+        &mut table,
+        0x1B,
+        OSC_STRING_STATE,
+        DISPATCH_ACTION,
+        ESCAPE_STATE,
+    );
+    add_one(
+        &mut table,
+        0x07,
+        OSC_STRING_STATE,
+        DISPATCH_ACTION,
+        GROUND_STATE,
+    );
+    add_one(
+        &mut table,
+        0x9C,
+        OSC_STRING_STATE,
+        DISPATCH_ACTION,
+        GROUND_STATE,
+    );
+    add_many(
+        &mut table,
+        &[0x18, 0x1A],
+        OSC_STRING_STATE,
+        IGNORE_ACTION,
+        GROUND_STATE,
+    );
 
     table
 }
 
-fn add_one(table: &mut [u8; DEFAULT_TABLE_SIZE], code: u8, state: State, action: Action, next: State) {
+fn add_one(
+    table: &mut [u8; DEFAULT_TABLE_SIZE],
+    code: u8,
+    state: State,
+    action: Action,
+    next: State,
+) {
     let idx = (state as usize) << INDEX_STATE_SHIFT | code as usize;
     let value = action << TRANSITION_ACTION_SHIFT | next;
     table[idx] = value;
 }
 
-fn add_many(table: &mut [u8; DEFAULT_TABLE_SIZE], codes: &[u8], state: State, action: Action, next: State) {
+fn add_many(
+    table: &mut [u8; DEFAULT_TABLE_SIZE],
+    codes: &[u8],
+    state: State,
+    action: Action,
+    next: State,
+) {
     for &code in codes {
         add_one(table, code, state, action, next);
     }
 }
 
-fn add_range(table: &mut [u8; DEFAULT_TABLE_SIZE], start: u8, end: u8, state: State, action: Action, next: State) {
+fn add_range(
+    table: &mut [u8; DEFAULT_TABLE_SIZE],
+    start: u8,
+    end: u8,
+    state: State,
+    action: Action,
+    next: State,
+) {
     for code in start..=end {
         add_one(table, code, state, action, next);
     }
@@ -591,41 +1228,34 @@ impl<'a> Params<'a> {
 
 /// Handler handles actions performed by the parser.
 /// It is used to handle ANSI escape sequences, control characters, and runes.
+///
+/// The handler callback types mirror the upstream Go `Handler` struct's
+/// fields (e.g. `CsiHandler func(cmd Cmd, params []int)`).
+type CsiHandler<'a> = Option<&'a mut dyn FnMut(Cmd, &[i32])>;
+type DcsHandler<'a> = Option<&'a mut dyn FnMut(Cmd, &[i32], &[u8])>;
+type OscHandler<'a> = Option<&'a mut dyn FnMut(i32, &[u8])>;
+type BytesHandler<'a> = Option<&'a mut dyn FnMut(&[u8])>;
+
+#[derive(Default)]
 pub struct Handler<'a> {
     /// Print is called when a printable rune is encountered.
     pub print: Option<&'a mut dyn FnMut(char)>,
     /// Execute is called when a control character is encountered.
     pub execute: Option<&'a mut dyn FnMut(u8)>,
     /// HandleCsi is called when a CSI sequence is encountered.
-    pub handle_csi: Option<&'a mut dyn FnMut(Cmd, &[i32])>,
+    pub handle_csi: CsiHandler<'a>,
     /// HandleEsc is called when an ESC sequence is encountered.
     pub handle_esc: Option<&'a mut dyn FnMut(Cmd)>,
     /// HandleDcs is called when a DCS sequence is encountered.
-    pub handle_dcs: Option<&'a mut dyn FnMut(Cmd, &[i32], &[u8])>,
+    pub handle_dcs: DcsHandler<'a>,
     /// HandleOsc is called when an OSC sequence is encountered.
-    pub handle_osc: Option<&'a mut dyn FnMut(i32, &[u8])>,
+    pub handle_osc: OscHandler<'a>,
     /// HandlePm is called when a PM sequence is encountered.
-    pub handle_pm: Option<&'a mut dyn FnMut(&[u8])>,
+    pub handle_pm: BytesHandler<'a>,
     /// HandleApc is called when an APC sequence is encountered.
-    pub handle_apc: Option<&'a mut dyn FnMut(&[u8])>,
+    pub handle_apc: BytesHandler<'a>,
     /// HandleSos is called when a SOS sequence is encountered.
-    pub handle_sos: Option<&'a mut dyn FnMut(&[u8])>,
-}
-
-impl<'a> Default for Handler<'a> {
-    fn default() -> Self {
-        Handler {
-            print: None,
-            execute: None,
-            handle_csi: None,
-            handle_esc: None,
-            handle_dcs: None,
-            handle_osc: None,
-            handle_pm: None,
-            handle_apc: None,
-            handle_sos: None,
-        }
-    }
+    pub handle_sos: BytesHandler<'a>,
 }
 
 /// Parser represents a DEC ANSI compatible sequence parser.
@@ -755,8 +1385,8 @@ impl<'a> Parser<'a> {
             return '\u{FFFD}';
         }
         let mut bytes = [0u8; 4];
-        for i in 0..rw as usize {
-            bytes[i] = ((self.cmd >> (i * 8)) & 0xff) as u8;
+        for (i, b) in bytes.iter_mut().take(rw as usize).enumerate() {
+            *b = ((self.cmd >> (i * 8)) & 0xff) as u8;
         }
         let s = std::str::from_utf8(&bytes[..rw as usize]).unwrap_or("\u{FFFD}");
         s.chars().next().unwrap_or('\u{FFFD}')
@@ -863,10 +1493,7 @@ impl<'a> Parser<'a> {
             if self.state == ESCAPE_STATE {
                 self.perform_action(CLEAR_ACTION, state, b);
             }
-            if action == PUT_ACTION
-                && self.state == DCS_ENTRY_STATE
-                && state == DCS_STRING_STATE
-            {
+            if action == PUT_ACTION && self.state == DCS_ENTRY_STATE && state == DCS_STRING_STATE {
                 self.perform_action(START_ACTION, state, 0);
             }
         }
@@ -977,7 +1604,7 @@ impl<'a> Parser<'a> {
                 } else {
                     self.data_len = 0;
                 }
-                if state >= DCS_ENTRY_STATE && state <= DCS_STRING_STATE {
+                if (DCS_ENTRY_STATE..=DCS_STRING_STATE).contains(&state) {
                     // Collect the command byte for DCS
                     self.cmd |= b as i32;
                 } else {
@@ -1083,11 +1710,11 @@ impl<'a> Parser<'a> {
 fn utf8_byte_len(b: u8) -> i32 {
     if b <= 0b0111_1111 {
         1
-    } else if b >= 0b1100_0000 && b <= 0b1101_1111 {
+    } else if (0b1100_0000..=0b1101_1111).contains(&b) {
         2
-    } else if b >= 0b1110_0000 && b <= 0b1110_1111 {
+    } else if (0b1110_0000..=0b1110_1111).contains(&b) {
         3
-    } else if b >= 0b1111_0000 && b <= 0b1111_0111 {
+    } else if (0b1111_0000..=0b1111_0111).contains(&b) {
         4
     } else {
         -1
@@ -1137,11 +1764,7 @@ pub struct Decoded<'a> {
 /// Passing a non-None parser as the last argument will allow the decoder to
 /// collect sequence parameters, data, and commands. Zero [Cmd] means the CSI,
 /// DCS, or ESC sequence is invalid.
-pub fn decode_sequence<'a>(
-    b: &'a [u8],
-    state: DecodeState,
-    p: Option<&mut Parser>,
-) -> Decoded<'a> {
+pub fn decode_sequence<'a>(b: &'a [u8], state: DecodeState, p: Option<&mut Parser>) -> Decoded<'a> {
     decode_sequence_method(crate::method::WidthMethod::GraphemeWidth, b, state, p)
 }
 
@@ -1231,7 +1854,7 @@ fn decode_sequence_method<'a>(
                         };
                     }
 
-                    if c >= 0x80 && c <= 0xF7 {
+                    if (0x80..=0xF7).contains(&c) {
                         let (cluster, width) = first_grapheme_cluster(&b[i..], m);
                         let n = i + cluster.len();
                         return Decoded {
@@ -1251,7 +1874,7 @@ fn decode_sequence_method<'a>(
                     };
                 }
                 PREFIX_STATE => {
-                    if c >= b'<' && c <= b'?' {
+                    if (b'<'..=b'?').contains(&c) {
                         if let Some(p) = &mut p {
                             // We only collect the last prefix character.
                             p.cmd &= !(0xff << PREFIX_SHIFT);
@@ -1264,7 +1887,7 @@ fn decode_sequence_method<'a>(
                     continue 'byte;
                 }
                 PARAMS_STATE => {
-                    if c >= b'0' && c <= b'9' {
+                    if c.is_ascii_digit() {
                         if let Some(p) = &mut p {
                             if p.params[p.params_len] == MISSING_PARAM {
                                 p.params[p.params_len] = 0;
@@ -1295,7 +1918,7 @@ fn decode_sequence_method<'a>(
                     continue 'byte;
                 }
                 INTERMED_STATE => {
-                    if c >= b' ' && c <= b'/' {
+                    if (b' '..=b'/').contains(&c) {
                         if let Some(p) = &mut p {
                             p.cmd &= !(0xff << INTERMED_SHIFT);
                             p.cmd |= (c as i32) << INTERMED_SHIFT;
@@ -1314,7 +1937,7 @@ fn decode_sequence_method<'a>(
                         }
                     }
 
-                    if c >= b'@' && c <= b'~' {
+                    if (b'@'..=b'~').contains(&c) {
                         if let Some(p) = &mut p {
                             p.cmd &= !0xff;
                             p.cmd |= c as i32;
@@ -1369,13 +1992,13 @@ fn decode_sequence_method<'a>(
                         _ => {}
                     }
 
-                    if c >= b' ' && c <= b'/' {
+                    if (b' '..=b'/').contains(&c) {
                         if let Some(p) = &mut p {
                             p.cmd &= !(0xff << INTERMED_SHIFT);
                             p.cmd |= (c as i32) << INTERMED_SHIFT;
                         }
                         break 'byte;
-                    } else if c >= b'0' && c <= b'~' {
+                    } else if (b'0'..=b'~').contains(&c) {
                         if let Some(p) = &mut p {
                             p.cmd &= !0xff;
                             p.cmd |= c as i32;
@@ -1509,7 +2132,7 @@ fn parse_osc_cmd(p: Option<&mut Parser>) {
 
 /// FirstGraphemeCluster returns the first grapheme cluster in the given byte
 /// slice and its monospace display width.
-pub fn first_grapheme_cluster<'a>(b: &'a [u8], m: crate::method::WidthMethod) -> (&'a [u8], usize) {
+pub fn first_grapheme_cluster(b: &[u8], m: crate::method::WidthMethod) -> (&[u8], usize) {
     let s = std::str::from_utf8(b).unwrap_or("\u{FFFD}");
     let cluster: &str = crate::width::first_grapheme_cluster(s).unwrap_or(s);
     let width = match m {
@@ -1713,10 +2336,7 @@ mod tests {
     #[test]
     fn test_transition_ground_print() {
         assert_eq!(transition(GROUND_STATE, b'A'), (GROUND_STATE, PRINT_ACTION));
-        assert_eq!(
-            transition(GROUND_STATE, ESC),
-            (ESCAPE_STATE, CLEAR_ACTION)
-        );
+        assert_eq!(transition(GROUND_STATE, ESC), (ESCAPE_STATE, CLEAR_ACTION));
         assert_eq!(
             transition(ESCAPE_STATE, b'['),
             (CSI_ENTRY_STATE, CLEAR_ACTION)
@@ -1729,8 +2349,10 @@ mod tests {
         let mut csi = |cmd: Cmd, params: &[i32]| {
             events.push(format!("csi:{:?}:{}", cmd.0, params.len()));
         };
-        let mut handler = Handler::default();
-        handler.handle_csi = Some(&mut csi);
+        let handler = Handler {
+            handle_csi: Some(&mut csi),
+            ..Default::default()
+        };
         let mut p = Parser::with_handler(handler);
         p.parse(b"\x1b[10;20H");
         drop(p);
@@ -1744,9 +2366,11 @@ mod tests {
         let mut executed = Vec::new();
         let mut print = |r: char| printed.push(r);
         let mut exec = |b: u8| executed.push(b);
-        let mut handler = Handler::default();
-        handler.print = Some(&mut print);
-        handler.execute = Some(&mut exec);
+        let handler = Handler {
+            print: Some(&mut print),
+            execute: Some(&mut exec),
+            ..Default::default()
+        };
         let mut p = Parser::with_handler(handler);
         p.parse(b"Hi\x05");
         drop(p);
@@ -1758,8 +2382,10 @@ mod tests {
     fn test_parser_utf8_rune() {
         let mut printed = String::new();
         let mut print = |r: char| printed.push(r);
-        let mut handler = Handler::default();
-        handler.print = Some(&mut print);
+        let handler = Handler {
+            print: Some(&mut print),
+            ..Default::default()
+        };
         let mut p = Parser::with_handler(handler);
         p.parse("界".as_bytes());
         let r = p.rune();
@@ -1806,7 +2432,8 @@ mod tests {
 
     #[test]
     fn test_first_grapheme_cluster() {
-        let (g, w) = first_grapheme_cluster("👍🏽".as_bytes(), crate::method::WidthMethod::GraphemeWidth);
+        let (g, w) =
+            first_grapheme_cluster("👍🏽".as_bytes(), crate::method::WidthMethod::GraphemeWidth);
         assert_eq!(g, "👍🏽".as_bytes());
         assert_eq!(w, 2);
     }

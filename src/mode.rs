@@ -1124,7 +1124,10 @@ impl Modes {
     /// Get returns the setting of a terminal mode. If the mode is not set, it
     /// returns [ModeSetting::NOT_RECOGNIZED].
     pub fn get(&self, mode: Mode) -> ModeSetting {
-        self.modes.get(&mode).copied().unwrap_or(ModeSetting::NOT_RECOGNIZED)
+        self.modes
+            .get(&mode)
+            .copied()
+            .unwrap_or(ModeSetting::NOT_RECOGNIZED)
     }
 
     /// Delete deletes a terminal mode. This has the same effect as setting the
@@ -1201,18 +1204,65 @@ mod tests {
     #[test]
     fn test_mode_setting_methods() {
         let cases: &[(&str, ModeSetting, bool, bool, bool, bool, bool)] = &[
-            ("ModeNotRecognized", ModeSetting(0), true, false, false, false, false),
+            (
+                "ModeNotRecognized",
+                ModeSetting(0),
+                true,
+                false,
+                false,
+                false,
+                false,
+            ),
             ("ModeSet", ModeSetting(1), false, true, false, false, false),
-            ("ModeReset", ModeSetting(2), false, false, true, false, false),
-            ("ModePermanentlySet", ModeSetting(3), false, true, false, true, false),
-            ("ModePermanentlyReset", ModeSetting(4), false, false, true, false, true),
+            (
+                "ModeReset",
+                ModeSetting(2),
+                false,
+                false,
+                true,
+                false,
+                false,
+            ),
+            (
+                "ModePermanentlySet",
+                ModeSetting(3),
+                false,
+                true,
+                false,
+                true,
+                false,
+            ),
+            (
+                "ModePermanentlyReset",
+                ModeSetting(4),
+                false,
+                false,
+                true,
+                false,
+                true,
+            ),
         ];
         for (name, mode, not_recog, is_set, is_reset, perm_set, perm_rst) in cases {
-            assert_eq!(mode.is_not_recognized(), *not_recog, "{} IsNotRecognized", name);
+            assert_eq!(
+                mode.is_not_recognized(),
+                *not_recog,
+                "{} IsNotRecognized",
+                name
+            );
             assert_eq!(mode.is_set(), *is_set, "{} IsSet", name);
             assert_eq!(mode.is_reset(), *is_reset, "{} IsReset", name);
-            assert_eq!(mode.is_permanently_set(), *perm_set, "{} IsPermanentlySet", name);
-            assert_eq!(mode.is_permanently_reset(), *perm_rst, "{} IsPermanentlyReset", name);
+            assert_eq!(
+                mode.is_permanently_set(),
+                *perm_set,
+                "{} IsPermanentlySet",
+                name
+            );
+            assert_eq!(
+                mode.is_permanently_reset(),
+                *perm_rst,
+                "{} IsPermanentlyReset",
+                name
+            );
         }
         assert_eq!(ModeSetting::NOT_RECOGNIZED.0, 0);
         assert_eq!(ModeSetting::SET.0, 1);
@@ -1225,11 +1275,22 @@ mod tests {
     fn test_set_mode() {
         let cases: &[(&str, &[Mode], &str)] = &[
             ("empty modes", &[], ""),
-            ("single ANSI mode", &[Mode::from(MODE_KEYBOARD_ACTION)], "\x1b[2h"),
-            ("single DEC mode", &[Mode::from(MODE_CURSOR_KEYS)], "\x1b[?1h"),
+            (
+                "single ANSI mode",
+                &[Mode::from(MODE_KEYBOARD_ACTION)],
+                "\x1b[2h",
+            ),
+            (
+                "single DEC mode",
+                &[Mode::from(MODE_CURSOR_KEYS)],
+                "\x1b[?1h",
+            ),
             (
                 "multiple ANSI modes",
-                &[Mode::from(MODE_KEYBOARD_ACTION), Mode::from(MODE_INSERT_REPLACE)],
+                &[
+                    Mode::from(MODE_KEYBOARD_ACTION),
+                    Mode::from(MODE_INSERT_REPLACE),
+                ],
                 "\x1b[2;4h",
             ),
             (
@@ -1239,7 +1300,10 @@ mod tests {
             ),
             (
                 "mixed ANSI and DEC modes",
-                &[Mode::from(MODE_KEYBOARD_ACTION), Mode::from(MODE_CURSOR_KEYS)],
+                &[
+                    Mode::from(MODE_KEYBOARD_ACTION),
+                    Mode::from(MODE_CURSOR_KEYS),
+                ],
                 "\x1b[2h\x1b[?1h",
             ),
             (
@@ -1262,11 +1326,22 @@ mod tests {
     fn test_reset_mode() {
         let cases: &[(&str, &[Mode], &str)] = &[
             ("empty modes", &[], ""),
-            ("single ANSI mode", &[Mode::from(MODE_KEYBOARD_ACTION)], "\x1b[2l"),
-            ("single DEC mode", &[Mode::from(MODE_CURSOR_KEYS)], "\x1b[?1l"),
+            (
+                "single ANSI mode",
+                &[Mode::from(MODE_KEYBOARD_ACTION)],
+                "\x1b[2l",
+            ),
+            (
+                "single DEC mode",
+                &[Mode::from(MODE_CURSOR_KEYS)],
+                "\x1b[?1l",
+            ),
             (
                 "multiple ANSI modes",
-                &[Mode::from(MODE_KEYBOARD_ACTION), Mode::from(MODE_INSERT_REPLACE)],
+                &[
+                    Mode::from(MODE_KEYBOARD_ACTION),
+                    Mode::from(MODE_INSERT_REPLACE),
+                ],
                 "\x1b[2;4l",
             ),
             (
@@ -1276,7 +1351,10 @@ mod tests {
             ),
             (
                 "mixed ANSI and DEC modes",
-                &[Mode::from(MODE_KEYBOARD_ACTION), Mode::from(MODE_CURSOR_KEYS)],
+                &[
+                    Mode::from(MODE_KEYBOARD_ACTION),
+                    Mode::from(MODE_CURSOR_KEYS),
+                ],
                 "\x1b[2l\x1b[?1l",
             ),
             (

@@ -42,36 +42,28 @@ pub fn x_parse_color(s: &str) -> Option<RGBColor> {
     if let Some(hex) = s.strip_prefix('#') {
         return match hex.len() {
             3 => {
-                let nib = |i: usize| -> Option<u8> {
-                    u8::from_str_radix(&hex[i..i + 1], 16).ok()
-                };
+                let nib = |i: usize| -> Option<u8> { u8::from_str_radix(&hex[i..i + 1], 16).ok() };
                 let r = nib(0)?.checked_mul(17)?;
                 let g = nib(1)?.checked_mul(17)?;
                 let b = nib(2)?.checked_mul(17)?;
                 Some(RGBColor { r, g, b })
             }
             4 => {
-                let nib = |i: usize| -> Option<u8> {
-                    u8::from_str_radix(&hex[i..i + 1], 16).ok()
-                };
+                let nib = |i: usize| -> Option<u8> { u8::from_str_radix(&hex[i..i + 1], 16).ok() };
                 let r = nib(0)?.checked_mul(17)?;
                 let g = nib(1)?.checked_mul(17)?;
                 let b = nib(2)?.checked_mul(17)?;
                 Some(RGBColor { r, g, b })
             }
             6 => {
-                let pair = |i: usize| -> Option<u8> {
-                    u8::from_str_radix(&hex[i..i + 2], 16).ok()
-                };
+                let pair = |i: usize| -> Option<u8> { u8::from_str_radix(&hex[i..i + 2], 16).ok() };
                 let r = pair(0)?;
                 let g = pair(2)?;
                 let b = pair(4)?;
                 Some(RGBColor { r, g, b })
             }
             8 => {
-                let pair = |i: usize| -> Option<u8> {
-                    u8::from_str_radix(&hex[i..i + 2], 16).ok()
-                };
+                let pair = |i: usize| -> Option<u8> { u8::from_str_radix(&hex[i..i + 2], 16).ok() };
                 let r = pair(0)?;
                 let g = pair(2)?;
                 let b = pair(4)?;
@@ -154,7 +146,10 @@ pub fn strip(s: &str) -> String {
                 }
             }
         }
-        rest = &rest[chars[..consumed.min(chars.len())].iter().collect::<String>().len()..];
+        rest = &rest[chars[..consumed.min(chars.len())]
+            .iter()
+            .collect::<String>()
+            .len()..];
     }
     out.push_str(rest);
     out
@@ -205,8 +200,15 @@ pub fn cut(s: &str, start: usize, end: usize) -> String {
                     }
                 }
             }
-            out.push_str(&chars[..consumed.min(chars.len())].iter().collect::<String>());
-            rest = &rest[chars[..consumed.min(chars.len())].iter().collect::<String>().len()..];
+            out.push_str(
+                &chars[..consumed.min(chars.len())]
+                    .iter()
+                    .collect::<String>(),
+            );
+            rest = &rest[chars[..consumed.min(chars.len())]
+                .iter()
+                .collect::<String>()
+                .len()..];
             continue;
         }
         let c = rest.chars().next().unwrap();
@@ -298,29 +300,53 @@ mod tests {
     fn test_x_parse_color() {
         assert_eq!(
             x_parse_color("#ff0000"),
-            Some(RGBColor { r: 0xff, g: 0x00, b: 0x00 })
+            Some(RGBColor {
+                r: 0xff,
+                g: 0x00,
+                b: 0x00
+            })
         );
         assert_eq!(
             x_parse_color("#f00"),
-            Some(RGBColor { r: 0xff, g: 0x00, b: 0x00 })
+            Some(RGBColor {
+                r: 0xff,
+                g: 0x00,
+                b: 0x00
+            })
         );
         assert_eq!(
             x_parse_color("#0000ff"),
-            Some(RGBColor { r: 0x00, g: 0x00, b: 0xff })
+            Some(RGBColor {
+                r: 0x00,
+                g: 0x00,
+                b: 0xff
+            })
         );
         assert_eq!(
             x_parse_color("rgb:ffff/8080/0000"),
-            Some(RGBColor { r: 0xff, g: 0x80, b: 0x00 })
+            Some(RGBColor {
+                r: 0xff,
+                g: 0x80,
+                b: 0x00
+            })
         );
         assert_eq!(
             x_parse_color("rgba:ffff/0000/0000/ffff"),
-            Some(RGBColor { r: 0xff, g: 0x00, b: 0x00 })
+            Some(RGBColor {
+                r: 0xff,
+                g: 0x00,
+                b: 0x00
+            })
         );
         assert_eq!(x_parse_color("notacolor"), None);
         assert_eq!(x_parse_color("#12345"), None);
         assert_eq!(
             x_parse_color("rgb:ff/00/00"),
-            Some(RGBColor { r: 0xff, g: 0x00, b: 0x00 })
+            Some(RGBColor {
+                r: 0xff,
+                g: 0x00,
+                b: 0x00
+            })
         );
         assert_eq!(x_parse_color("rgb:ff/00"), None);
     }

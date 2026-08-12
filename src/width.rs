@@ -251,8 +251,9 @@ pub fn first_grapheme_cluster(s: &str) -> Option<&str> {
 }
 
 /// The subset of the ANSI parser states needed for width measurement.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 enum State {
+    #[default]
     Ground,
     Esc,
     EscInter,
@@ -260,12 +261,6 @@ enum State {
     Dcs,
     Osc,
     Str,
-}
-
-impl Default for State {
-    fn default() -> Self {
-        State::Ground
-    }
 }
 
 fn cluster_width(cluster: &str, m: WidthMethod) -> usize {
@@ -297,7 +292,11 @@ fn wc_width(cluster: &str) -> usize {
 fn grapheme_width(cluster: &str) -> usize {
     let bytes = cluster.as_bytes();
     if bytes.len() == 1 {
-        return if bytes[0] <= 0x1f || bytes[0] == 0x7f { 0 } else { 1 };
+        return if bytes[0] <= 0x1f || bytes[0] == 0x7f {
+            0
+        } else {
+            1
+        };
     }
     let first = cluster.chars().next().unwrap();
     let cp = first as u32;
@@ -330,9 +329,21 @@ mod tests {
         ("combining", "a\u{0300}", "a\u{0300}", 1, 1),
         ("control", "\x1b[31mhello\x1b[0m", "hello", 5, 5),
         ("csi8", "\u{9b}38;5;1mhello\u{9b}m", "hello", 5, 5),
-        ("osc", "\u{9d}2;charmbracelet: ~/Source/bubbletea\u{9c}", "", 0, 0),
+        (
+            "osc",
+            "\u{9d}2;charmbracelet: ~/Source/bubbletea\u{9c}",
+            "",
+            0,
+            0,
+        ),
         ("controlemoji", "\x1b[31m👋\x1b[0m", "👋", 2, 2),
-        ("oscwideemoji", "\x1b]2;title👨\u{200d}👩\u{200d}👦\x07", "", 0, 0),
+        (
+            "oscwideemoji",
+            "\x1b]2;title👨\u{200d}👩\u{200d}👦\x07",
+            "",
+            0,
+            0,
+        ),
         (
             "oscwideemoji",
             "\x1b[31m👨\u{200d}👩\u{200d}👦\x1b[m",
@@ -354,13 +365,7 @@ mod tests {
             6,
             6,
         ),
-        (
-            "dcsarabic",
-            "\x1bP?123$pسلام\x1b\\اهلا",
-            "اهلا",
-            4,
-            4,
-        ),
+        ("dcsarabic", "\x1bP?123$pسلام\x1b\\اهلا", "اهلا", 4, 4),
         ("newline", "hello\nworld", "hello\nworld", 10, 10),
         ("tab", "hello\tworld", "hello\tworld", 10, 10),
         (
@@ -372,7 +377,13 @@ mod tests {
         ),
         ("style", "\x1B[38;2;249;38;114mfoo", "foo", 3, 3),
         ("unicode", "\x1b[35m“box”\x1b[0m", "“box”", 5, 5),
-        ("just_unicode", "Claire’s Boutique", "Claire’s Boutique", 17, 17),
+        (
+            "just_unicode",
+            "Claire’s Boutique",
+            "Claire’s Boutique",
+            17,
+            17,
+        ),
         ("unclosed_ansi", "Hey, \x1b[7m\n猴", "Hey, \n猴", 7, 7),
         ("double_asian_runes", " 你\x1b[8m好.", " 你好.", 6, 6),
         ("flag", "🇸🇦", "🇸🇦", 2, 1),

@@ -204,7 +204,11 @@ pub fn cpl(n: i32) -> String {
 ///
 /// See: <https://vt100.net/docs/vt510-rm/CHA.html>
 pub fn cursor_horizontal_absolute(col: i32) -> String {
-    let s = if col > 0 { col.to_string() } else { String::new() };
+    let s = if col > 0 {
+        col.to_string()
+    } else {
+        String::new()
+    };
     format!("\x1b[{}G", s)
 }
 
@@ -226,8 +230,16 @@ pub fn cursor_position(col: i32, row: i32) -> String {
         return CURSOR_HOME_POSITION.to_string();
     }
 
-    let r = if row > 0 { row.to_string() } else { String::new() };
-    let c = if col > 0 { col.to_string() } else { String::new() };
+    let r = if row > 0 {
+        row.to_string()
+    } else {
+        String::new()
+    };
+    let c = if col > 0 {
+        col.to_string()
+    } else {
+        String::new()
+    };
     format!("\x1b[{};{}H", r, c)
 }
 
@@ -255,8 +267,16 @@ pub fn set_cursor_position(col: i32, row: i32) -> String {
         return HOME_CURSOR_POSITION.to_string();
     }
 
-    let r = if row > 0 { row.to_string() } else { String::new() };
-    let c = if col > 0 { col.to_string() } else { String::new() };
+    let r = if row > 0 {
+        row.to_string()
+    } else {
+        String::new()
+    };
+    let c = if col > 0 {
+        col.to_string()
+    } else {
+        String::new()
+    };
     format!("\x1b[{};{}H", r, c)
 }
 
@@ -354,7 +374,11 @@ pub fn cbt(n: i32) -> String {
 ///
 /// See: <https://vt100.net/docs/vt510-rm/VPA.html>
 pub fn vertical_position_absolute(row: i32) -> String {
-    let s = if row > 0 { row.to_string() } else { String::new() };
+    let s = if row > 0 {
+        row.to_string()
+    } else {
+        String::new()
+    };
     format!("\x1b[{}d", s)
 }
 
@@ -392,8 +416,16 @@ pub fn vpr(n: i32) -> String {
 ///
 /// See: <https://vt100.net/docs/vt510-rm/HVP.html>
 pub fn horizontal_vertical_position(col: i32, row: i32) -> String {
-    let r = if row > 0 { row.to_string() } else { String::new() };
-    let c = if col > 0 { col.to_string() } else { String::new() };
+    let r = if row > 0 {
+        row.to_string()
+    } else {
+        String::new()
+    };
+    let c = if col > 0 {
+        col.to_string()
+    } else {
+        String::new()
+    };
     format!("\x1b[{};{}f", r, c)
 }
 
@@ -501,7 +533,11 @@ pub const REVERSE_INDEX: &str = "\x1bM";
 ///
 /// See: <https://vt100.net/docs/vt510-rm/HPA.html>
 pub fn horizontal_position_absolute(col: i32) -> String {
-    let s = if col > 0 { col.to_string() } else { String::new() };
+    let s = if col > 0 {
+        col.to_string()
+    } else {
+        String::new()
+    };
     format!("\x1b[{}`", s)
 }
 

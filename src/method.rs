@@ -9,18 +9,13 @@ use crate::width;
 use std::sync::OnceLock;
 
 /// WidthMethod is a method used to measure the width of a string.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum WidthMethod {
     /// Measure the width of each grapheme cluster.
     GraphemeWidth,
     /// Measure the width of each wide character and rune.
+    #[default]
     WcWidth,
-}
-
-impl Default for WidthMethod {
-    fn default() -> Self {
-        WidthMethod::WcWidth
-    }
 }
 
 impl WidthMethod {
@@ -38,11 +33,9 @@ impl WidthMethod {
 /// `init` in `ansi/method.go`.
 pub(crate) fn east_asian_width() -> bool {
     static EAST_ASIAN: OnceLock<bool> = OnceLock::new();
-    *EAST_ASIAN.get_or_init(|| {
-        match std::env::var("RUNEWIDTH_EASTASIAN") {
-            Ok(v) => parse_bool(&v).unwrap_or(false),
-            Err(_) => false,
-        }
+    *EAST_ASIAN.get_or_init(|| match std::env::var("RUNEWIDTH_EASTASIAN") {
+        Ok(v) => parse_bool(&v).unwrap_or(false),
+        Err(_) => false,
     })
 }
 
@@ -64,21 +57,59 @@ mod tests {
     fn test_method_string_width() {
         let cases = [
             ("empty string wcwidth", WidthMethod::WcWidth, "", 0),
-            ("empty string grapheme width", WidthMethod::GraphemeWidth, "", 0),
+            (
+                "empty string grapheme width",
+                WidthMethod::GraphemeWidth,
+                "",
+                0,
+            ),
             ("ascii wcwidth", WidthMethod::WcWidth, "hello", 5),
-            ("ascii grapheme width", WidthMethod::GraphemeWidth, "hello", 5),
-            ("ansi wcwidth", WidthMethod::WcWidth, "\x1b[31mred\x1b[0m", 3),
-            ("ansi grapheme width", WidthMethod::GraphemeWidth, "\x1b[31mred\x1b[0m", 3),
+            (
+                "ascii grapheme width",
+                WidthMethod::GraphemeWidth,
+                "hello",
+                5,
+            ),
+            (
+                "ansi wcwidth",
+                WidthMethod::WcWidth,
+                "\x1b[31mred\x1b[0m",
+                3,
+            ),
+            (
+                "ansi grapheme width",
+                WidthMethod::GraphemeWidth,
+                "\x1b[31mred\x1b[0m",
+                3,
+            ),
             ("wide chars wcwidth", WidthMethod::WcWidth, "コンニチハ", 10),
-            ("wide chars grapheme width", WidthMethod::GraphemeWidth, "コンニチハ", 10),
+            (
+                "wide chars grapheme width",
+                WidthMethod::GraphemeWidth,
+                "コンニチハ",
+                10,
+            ),
             ("emoji wcwidth", WidthMethod::WcWidth, "😀", 2),
             ("emoji grapheme width", WidthMethod::GraphemeWidth, "😀", 2),
-            ("flag emoji wcwidth", WidthMethod::WcWidth, "🏳\u{fe0f}\u{200d}🌈", 1),
-            ("flag emoji grapheme width", WidthMethod::GraphemeWidth, "🏳\u{fe0f}\u{200d}🌈", 2),
+            (
+                "flag emoji wcwidth",
+                WidthMethod::WcWidth,
+                "🏳\u{fe0f}\u{200d}🌈",
+                1,
+            ),
+            (
+                "flag emoji grapheme width",
+                WidthMethod::GraphemeWidth,
+                "🏳\u{fe0f}\u{200d}🌈",
+                2,
+            ),
         ];
         for (name, m, input, want) in cases {
             let got = m.string_width(input);
-            assert_eq!(got, want, "{name}: Method.StringWidth({input:?}) = {got}, want {want}");
+            assert_eq!(
+                got, want,
+                "{name}: Method.StringWidth({input:?}) = {got}, want {want}"
+            );
         }
     }
 }

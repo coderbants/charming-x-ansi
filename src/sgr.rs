@@ -299,7 +299,10 @@ mod tests {
             "\x1b[44;1m"
         );
         assert_eq!(
-            select_graphic_rendition(&[BRIGHT_RED_FOREGROUND_COLOR_ATTR, BRIGHT_BLUE_BACKGROUND_COLOR_ATTR]),
+            select_graphic_rendition(&[
+                BRIGHT_RED_FOREGROUND_COLOR_ATTR,
+                BRIGHT_BLUE_BACKGROUND_COLOR_ATTR
+            ]),
             "\x1b[91;104m"
         );
         assert_eq!(select_graphic_rendition(&[RESET_ATTR]), "\x1b[0m");
@@ -345,8 +348,16 @@ mod tests {
         assert_eq!(sgr(&[]), select_graphic_rendition(&[]));
         assert_eq!(sgr(&[BOLD_ATTR]), select_graphic_rendition(&[BOLD_ATTR]));
         assert_eq!(
-            sgr(&[BOLD_ATTR, RED_FOREGROUND_COLOR_ATTR, BLUE_BACKGROUND_COLOR_ATTR]),
-            select_graphic_rendition(&[BOLD_ATTR, RED_FOREGROUND_COLOR_ATTR, BLUE_BACKGROUND_COLOR_ATTR])
+            sgr(&[
+                BOLD_ATTR,
+                RED_FOREGROUND_COLOR_ATTR,
+                BLUE_BACKGROUND_COLOR_ATTR
+            ]),
+            select_graphic_rendition(&[
+                BOLD_ATTR,
+                RED_FOREGROUND_COLOR_ATTR,
+                BLUE_BACKGROUND_COLOR_ATTR
+            ])
         );
     }
 }
