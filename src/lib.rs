@@ -25,6 +25,7 @@ pub mod screen;
 pub mod style;
 pub mod util;
 pub mod width;
+pub mod winop;
 pub mod wrap;
 
 pub use background::{

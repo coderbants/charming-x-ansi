@@ -411,7 +411,8 @@ impl Style {
     }
 }
 
-fn color_seq(c: &Color, base: u8) -> String {
+/// Returns the SGR parameter for the given color and base (30/40/50).
+pub fn color_seq(c: &Color, base: u8) -> String {
     match c {
         Color::Default => format!("{}9", base),
         Color::Basic(v) => {

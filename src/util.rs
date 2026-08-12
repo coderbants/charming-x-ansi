@@ -211,13 +211,17 @@ pub fn cut(s: &str, start: usize, end: usize) -> String {
         }
         let c = rest.chars().next().unwrap();
         let w = UnicodeWidthChar::width(c).unwrap_or(0);
-        if width >= end {
-            break;
-        }
-        if width >= start {
+        // Upstream (ansi.Cut, GraphemeWidth): a cluster is written when the
+        // cumulative width is strictly greater than the left boundary and
+        // no greater than the right boundary. This mirrors the combined
+        // `truncate` (width <= right) + `truncateLeft` (width > left) pass.
+        width += w;
+        if width > start && width <= end {
             out.push(c);
         }
-        width += w;
+        if width > end {
+            break;
+        }
         rest = &rest[c.len_utf8()..];
     }
     out
