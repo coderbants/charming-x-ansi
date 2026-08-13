@@ -10,7 +10,7 @@
 
 # Charming X/ANSI (`charming-x-ansi`)
 
-**Charming X/ANSI** is a complete, from-scratch Rust port of the [`ansi`](https://github.com/charmbracelet/x/tree/main/ansi) package from Charmbracelet's `x` monorepo — ANSI escape sequence parsing, SGR styling, width/wrap utilities and terminal queries. It tracks upstream on a rolling basis, with crate versions mirroring the upstream Go pseudo-version pins, and the same **1:1 parity** goals as the rest of the Charming port family, favoring fidelity to upstream semantics over Rust-native rewrites.
+**Charming X/ANSI** is a complete, from-scratch Rust port of the [`ansi`](https://github.com/charmbracelet/x/tree/main/ansi) package from Charmbracelet's `x` monorepo — ANSI escape sequence parsing, SGR styling, width/wrap utilities and terminal queries. It tracks upstream on a rolling basis. **Version policy: the crate version and every release tag must equal the tracked upstream version exactly — never ahead, never behind** (enforced by `scripts/verify_upstream_version.sh` in CI and on every release). It shares the **1:1 parity** goals of the rest of the Charming port family, favoring fidelity to upstream semantics over Rust-native rewrites.
 
 It's part of the Charming port family of the Bubble Tea ecosystem and underpins [charming-ultraviolet](https://github.com/coderbants/charming-ultraviolet), [charming-lipgloss](https://github.com/coderbants/charming-lipgloss), [charming-colorprofile](https://github.com/coderbants/charming-colorprofile), [charming-bubbles](https://github.com/coderbants/charming-bubbles) and [charming-bubbletea](https://github.com/coderbants/charming-bubbletea).
 
