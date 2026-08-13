@@ -1,4 +1,4 @@
-<p>
+<p align="center">
   <picture>
     <source media="(prefers-color-scheme: light)" srcset="https://user-images.githubusercontent.com/25087/236529178-465e9b98-3401-47dd-8691-ea475d96c3ad.png" height="200" />
     <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/25087/236529273-6f8c841f-f11b-4ec8-b01d-7e3d9b17c85f.png" height="200" />
