@@ -1,4 +1,4 @@
-# Upstream Go File Mapping: `charming-x-ansi`
+# Upstream Go File Mapping: `rusty-x-ansi`
 
 Target Upstream Tag: `github.com/charmbracelet/x` monorepo at module tag `ansi/v0.11.7`
 
@@ -133,7 +133,7 @@ v0.11.6 for colorprofile v0.4.3). This crate now targets `ansi/v0.11.7` (the pin
 lipgloss/bubbletea/ultraviolet@20260703) and is published under the pseudo-version
 `0.0.0-20260703014108`. Earlier pins are produced by reverse diff-forwarding
 (`git diff ansi/v0.11.7..ansi/v0.11.2` etc.) and published as separate crate versions. See
-`/Users/jonny/Projects/charming/DEPENDENCY_PLAN.md` §6.
+`/Users/jonny/Projects/rusty/DEPENDENCY_PLAN.md` §6.
 
 ## Porting Status
 

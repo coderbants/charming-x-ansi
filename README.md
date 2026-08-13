@@ -4,15 +4,17 @@
     <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/25087/236529273-6f8c841f-f11b-4ec8-b01d-7e3d9b17c85f.png" height="200" />
     <img src="https://user-images.githubusercontent.com/25087/236529178-465e9b98-3401-47dd-8691-ea475d96c3ad.png" height="200" alt="A 3D rendering of an X"/>
   </picture><br>
-  <a href="https://crates.io/crates/charming-x-ansi"><img src="https://img.shields.io/crates/v/charming-x-ansi.svg" alt="crates.io"></a>
-    <a href="https://github.com/coderbants/charming-x-ansi/actions"><img src="https://github.com/coderbants/charming-x-ansi/actions/workflows/ci.yml/badge.svg" alt="Build Status"></a>
+  <a href="https://crates.io/crates/rusty-x-ansi"><img src="https://img.shields.io/crates/v/rusty-x-ansi.svg" alt="crates.io"></a>
+    <a href="https://github.com/coderbants/rusty-x-ansi/actions"><img src="https://github.com/coderbants/rusty-x-ansi/actions/workflows/ci.yml/badge.svg" alt="Build Status"></a>
 </p>
 
-# Charming X/ANSI (`charming-x-ansi`)
+# Rusty X/ANSI (`rusty-x-ansi`)
 
-**Charming X/ANSI** is a complete, from-scratch Rust port of the [`ansi`](https://github.com/charmbracelet/x/tree/main/ansi) package from Charmbracelet's `x` monorepo — ANSI escape sequence parsing, SGR styling, width/wrap utilities and terminal queries. It tracks upstream on a rolling basis. **Version policy: the crate version and every release tag must equal the tracked upstream version exactly — never ahead, never behind** (enforced by `scripts/verify_upstream_version.sh` in CI and on every release). It shares the **1:1 parity** goals of the rest of the Charming port family, favoring fidelity to upstream semantics over Rust-native rewrites.
+**Rusty X/ANSI** is a complete, from-scratch Rust port of the [`ansi`](https://github.com/charmbracelet/x/tree/main/ansi) package from Charmbracelet's `x` monorepo — ANSI escape sequence parsing, SGR styling, width/wrap utilities and terminal queries. It tracks upstream on a rolling basis. **Version policy: the crate version and every release tag must equal the tracked upstream version exactly — never ahead, never behind** (enforced by `scripts/verify_upstream_version.sh` in CI and on every release). It shares the **1:1 parity** goals of the rest of the Rusty port family, favoring fidelity to upstream semantics over Rust-native rewrites.
 
-It's part of the Charming port family of the Bubble Tea ecosystem and underpins [charming-ultraviolet](https://github.com/coderbants/charming-ultraviolet), [charming-lipgloss](https://github.com/coderbants/charming-lipgloss), [charming-colorprofile](https://github.com/coderbants/charming-colorprofile), [charming-bubbles](https://github.com/coderbants/charming-bubbles) and [charming-bubbletea](https://github.com/coderbants/charming-bubbletea).
+It's part of the Rusty port family of the Bubble Tea ecosystem and underpins [rusty-ultraviolet](https://github.com/coderbants/rusty-ultraviolet), [rusty-lipgloss](https://github.com/coderbants/rusty-lipgloss), [rusty-colorprofile](https://github.com/coderbants/rusty-colorprofile), [rusty-bubbles](https://github.com/coderbants/rusty-bubbles) and [rusty-bubbletea](https://github.com/coderbants/rusty-bubbletea).
+
+***About X/ANSI***
 
 This repository contains experimental packages with no promises of
 backwards compatibility. Once they mature here, they might be moved
@@ -60,7 +62,7 @@ We'd love to hear your thoughts on this project. Feel free to drop us a note!
 ## Installation
 
 ```sh
-cargo add charming-x-ansi
+cargo add rusty-x-ansi
 ```
 
 Cleanroom Rust port of the [`ansi`](https://github.com/charmbracelet/x/tree/main/ansi) package:
@@ -73,8 +75,8 @@ Style text with the ANSI SGR style builder, and parse escape sequences with
 the incremental parser:
 
 ```rust
-use charming_x_ansi::style::{Color, Style};
-use charming_x_ansi::color::RGBColor;
+use rusty_x_ansi::style::{Color, Style};
+use rusty_x_ansi::color::RGBColor;
 
 // Build an SGR style and wrap a string in it.
 let mut style = Style::default();
@@ -83,12 +85,12 @@ style.fg_color = Some(Color::RGB(RGBColor { r: 255, g: 0, b: 0 }));
 println!("{}", style.styled("red and bold")); // [1;38;2;255;0;0mred and bold[m
 
 // Parse an escape stream into sequences and printable runes.
-let mut p = charming_x_ansi::parser::new_parser();
-let decoded = charming_x_ansi::parser::decode_sequence(b"\x1b[31mred", 0, Some(&mut p));
+let mut p = rusty_x_ansi::parser::new_parser();
+let decoded = rusty_x_ansi::parser::decode_sequence(b"\x1b[31mred", 0, Some(&mut p));
 assert_eq!(decoded.seq, b"\x1b[31m"); // the CSI sequence
 assert_eq!(decoded.width, 3);          // width of the printable rune
 ```
 
-The crate also provides width/wrap utilities (`charming_x_ansi::width`,
-`charming_x_ansi::wrap`) and terminal queries (background/foreground color,
-cursor color, terminal version) used throughout the Charming port family.
+The crate also provides width/wrap utilities (`rusty_x_ansi::width`,
+`rusty_x_ansi::wrap`) and terminal queries (background/foreground color,
+cursor color, terminal version) used throughout the Rusty port family.

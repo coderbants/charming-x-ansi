@@ -1,6 +1,6 @@
 [package]
-name = "charming-x-ansi"
-version = "0.0.0-20260813000000"
+name = "rusty-x-ansi"
+version = "0.11.7"
 edition = "2021"
 description = "Cleanroom Rust port of Charmbracelet's x/ansi module from the charmbracelet/x monorepo, pinned to upstream release ansi/v0.11.7 (pseudo-version 20260703014108)"
 license = "MIT"
@@ -13,5 +13,5 @@ libc = "0.2"
 [dev-dependencies]
 
 [lib]
-name = "charming_x_ansi"
+name = "rusty_x_ansi"
 path = "src/lib.rs"

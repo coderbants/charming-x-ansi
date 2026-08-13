@@ -1,6 +1,6 @@
-# Contributing to `charming-x-ansi`
+# Contributing to `rusty-x-ansi`
 
-Thanks for your interest in contributing! `charming-x-ansi` is a cleanroom Rust port of
+Thanks for your interest in contributing! `rusty-x-ansi` is a cleanroom Rust port of
 the upstream Go [charmbracelet/x/ansi](https://github.com/charmbracelet/x/tree/main/ansi)
 module (terminal I/O and ANSI parsing), pinned to the `ansi/v0.11.7` module tag of the
 upstream `charmbracelet/x` monorepo.
