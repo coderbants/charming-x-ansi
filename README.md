@@ -12,7 +12,7 @@
 
 # Rusty X/ANSI (`rusty-x-ansi`)
 
-**Rusty X/ANSI** is a complete, from-scratch Rust port of the [`ansi`](https://github.com/charmbracelet/x/tree/main/ansi) package from Charmbracelet's `x` monorepo — ANSI escape sequence parsing, SGR styling, width/wrap utilities and terminal queries. It tracks upstream on a rolling basis. **Version policy: the crate version and every release tag must equal the tracked upstream version exactly — never ahead, never behind** (enforced by `scripts/verify_upstream_version.sh` in CI and on every release). It shares the **1:1 parity** goals of the rest of the Rusty port family, favoring fidelity to upstream semantics over Rust-native rewrites.
+**Rusty X/ANSI** is a complete, from-scratch Rust port of the [`ansi`](https://github.com/charmbracelet/x/tree/main/ansi) package from Charmbracelet's `x` monorepo — ANSI escape sequence parsing, SGR styling, width/wrap utilities and terminal queries. It tracks upstream on a rolling basis under the family's [porting policies](./POLICIES.md): versions mirror upstream exactly, never ahead or behind, with a hard goal of **1:1 behavioural, visual and license parity**, favouring fidelity to upstream semantics over Rust-native rewrites.
 
 It's part of the Rusty port family of the Bubble Tea ecosystem and underpins [rusty-ultraviolet](https://github.com/coderbants/rusty-ultraviolet), [rusty-lipgloss](https://github.com/coderbants/rusty-lipgloss), [rusty-colorprofile](https://github.com/coderbants/rusty-colorprofile), [rusty-bubbles](https://github.com/coderbants/rusty-bubbles) and [rusty-bubbletea](https://github.com/coderbants/rusty-bubbletea).
 
