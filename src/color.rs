@@ -131,10 +131,13 @@ fn to6_cube(v: i32) -> usize {
 /// Converts an RGB color to the xterm-256 palette index, mirroring
 /// `ansi.Convert256` (tmux cube + HSLuv distance).
 pub fn convert_256(r: u8, g: u8, b: u8) -> IndexedColor {
-    // Colors pass through MakeColor's 16-bit division before scaling back.
-    let r16 = (r as f64 * 65280.0) / 65535.0;
-    let g16 = (g as f64 * 65280.0) / 65535.0;
-    let b16 = (b as f64 * 65280.0) / 65535.0;
+    // The 8-bit inputs are used directly: upstream computes `col.R * 255`
+    // from the normalized float color, and `colorful.MakeColor` only applies
+    // its 16-bit division to 16-bit channel inputs (e.g. `color.RGBA`), not
+    // to pre-normalized colors.
+    let r16 = r as f64;
+    let g16 = g as f64;
+    let b16 = b as f64;
 
     let qr = to6_cube(r16 as i32);
     let cr = Q2C[qr];
