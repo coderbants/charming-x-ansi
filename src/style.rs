@@ -433,6 +433,7 @@ pub fn color_seq(c: &Color, base: u8) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::parser::{parameter, Param};
 
     #[test]
     fn test_sgr_sequences() {
@@ -489,5 +490,230 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(s.string(), "\x1b[39;49;59m");
+    }
+
+    /// Legacy semicolon-separated RGB: 38;2;r;g;b.
+    #[test]
+    fn test_read_style_color_rgb_semicolon() {
+        let params = [38, 2, 10, 20, 30];
+        let mut co = None;
+        let n = read_style_color(&params, &mut co);
+        assert_eq!(n, 5);
+        assert_eq!(
+            co,
+            Some(Color::RGB(RGBColor {
+                r: 10,
+                g: 20,
+                b: 30
+            }))
+        );
+    }
+
+    /// Colon-separated RGB: 38:2:r:g:b.
+    #[test]
+    fn test_read_style_color_rgb_colon() {
+        let params = [
+            parameter(38, true),
+            parameter(2, true),
+            parameter(10, true),
+            parameter(20, true),
+            parameter(30, false),
+        ];
+        let mut co = None;
+        let n = read_style_color(&params, &mut co);
+        assert_eq!(n, 5);
+        assert_eq!(
+            co,
+            Some(Color::RGB(RGBColor {
+                r: 10,
+                g: 20,
+                b: 30
+            }))
+        );
+    }
+
+    /// RGB with color space id and tolerance (colon): 38:2:cs:r:g:b:t:tcs.
+    #[test]
+    fn test_read_style_color_rgb_colorspace() {
+        let params = [
+            parameter(38, true),
+            parameter(2, true),
+            parameter(1, true),  // color space id
+            parameter(10, true), // r
+            parameter(20, true), // g
+            parameter(30, true), // b
+            parameter(5, false), // tolerance
+        ];
+        let mut co = None;
+        let n = read_style_color(&params, &mut co);
+        assert_eq!(n, 7);
+        assert_eq!(
+            co,
+            Some(Color::RGB(RGBColor {
+                r: 10,
+                g: 20,
+                b: 30
+            }))
+        );
+    }
+
+    /// RGB with color space id, tolerance, and tolerance color space (8 params).
+    #[test]
+    fn test_read_style_color_rgb_colorspace_tol_cs() {
+        let params = [
+            parameter(38, true),
+            parameter(2, true),
+            parameter(1, true),  // color space id
+            parameter(10, true), // r
+            parameter(20, true), // g
+            parameter(30, true), // b
+            parameter(5, true),  // tolerance
+            parameter(7, true),  // tolerance color space
+            parameter(0, false),
+        ];
+        let mut co = None;
+        let n = read_style_color(&params, &mut co);
+        assert_eq!(n, 9);
+        assert_eq!(
+            co,
+            Some(Color::RGB(RGBColor {
+                r: 10,
+                g: 20,
+                b: 30
+            }))
+        );
+    }
+
+    /// Indexed color, semicolon: 38;5;234.
+    #[test]
+    fn test_read_style_color_indexed_semicolon() {
+        let params = [38, 5, 234];
+        let mut co = None;
+        let n = read_style_color(&params, &mut co);
+        assert_eq!(n, 3);
+        assert_eq!(co, Some(Color::Indexed(234)));
+    }
+
+    /// Indexed color, colon: 38:5:234.
+    #[test]
+    fn test_read_style_color_indexed_colon() {
+        let params = [
+            parameter(38, true),
+            parameter(5, true),
+            parameter(234, false),
+        ];
+        let mut co = None;
+        let n = read_style_color(&params, &mut co);
+        assert_eq!(n, 3);
+        assert_eq!(co, Some(Color::Indexed(234)));
+    }
+
+    /// CMY direct color: 38:3:cs:c:m:y.
+    #[test]
+    fn test_read_style_color_cmy() {
+        let params = [
+            parameter(38, true),
+            parameter(3, true),
+            parameter(1, true),
+            parameter(10, true),
+            parameter(20, true),
+            parameter(30, false),
+        ];
+        let mut co = None;
+        let n = read_style_color(&params, &mut co);
+        assert_eq!(n, 6);
+        assert_eq!(
+            co,
+            Some(Color::RGB(RGBColor {
+                r: 245,
+                g: 235,
+                b: 225
+            }))
+        );
+    }
+
+    /// CMYK direct color: 38:4:cs:c:m:y:k.
+    #[test]
+    fn test_read_style_color_cmyk() {
+        let params = [
+            parameter(38, true),
+            parameter(4, true),
+            parameter(1, true),
+            parameter(0, true),
+            parameter(0, true),
+            parameter(0, true),
+            parameter(255, false),
+        ];
+        let mut co = None;
+        let n = read_style_color(&params, &mut co);
+        assert_eq!(n, 7);
+        assert_eq!(co, Some(Color::RGB(RGBColor { r: 0, g: 0, b: 0 })));
+    }
+
+    /// RGBA direct color: 38:6:cs:r:g:b:a.
+    #[test]
+    fn test_read_style_color_rgba() {
+        let params = [
+            parameter(38, true),
+            parameter(6, true),
+            parameter(1, true),
+            parameter(10, true),
+            parameter(20, true),
+            parameter(30, true),
+            parameter(255, false),
+        ];
+        let mut co = None;
+        let n = read_style_color(&params, &mut co);
+        assert_eq!(n, 7);
+        assert_eq!(
+            co,
+            Some(Color::RGB(RGBColor {
+                r: 10,
+                g: 20,
+                b: 30
+            }))
+        );
+    }
+
+    /// Implementation-defined and transparent color types.
+    #[test]
+    fn test_read_style_color_defined_transparent() {
+        let params = [38, 0, 1];
+        let mut co = Some(Color::Indexed(5));
+        let n = read_style_color(&params, &mut co);
+        assert_eq!(n, 2);
+        assert_eq!(co, None);
+
+        let params = [38, 1, 1];
+        let mut co = Some(Color::Indexed(5));
+        let n = read_style_color(&params, &mut co);
+        assert_eq!(n, 2);
+        assert_eq!(co, None);
+    }
+
+    /// Too few params, unknown types, and ambiguous colors return 0.
+    #[test]
+    fn test_read_style_color_errors() {
+        let mut co = None;
+        // Fewer than 2 params.
+        assert_eq!(read_style_color(&[38], &mut co), 0);
+        // Unknown color type.
+        assert_eq!(read_style_color(&[38, 9, 1, 2, 3], &mut co), 0);
+        // RGB with too few params.
+        assert_eq!(read_style_color(&[38, 2, 1], &mut co), 0);
+        // RGB with a missing channel.
+        let params = [38, 2, 10, 20, i32::MIN];
+        assert_eq!(read_style_color(&params, &mut co), 0);
+        // CMYK with too few params.
+        assert_eq!(read_style_color(&[38, 4, 1, 2, 3], &mut co), 0);
+        // Indexed with an inconsistent separator.
+        let params = [parameter(38, true), parameter(5, false), 234];
+        assert_eq!(read_style_color(&params, &mut co), 0);
+        // Missing param defaults to 0.
+        let params = [38, 2, 10, 20, Param(i32::MAX).0];
+        let mut co = None;
+        let n = read_style_color(&params, &mut co);
+        assert_eq!(n, 5);
+        assert_eq!(co, Some(Color::RGB(RGBColor { r: 10, g: 20, b: 0 })));
     }
 }
