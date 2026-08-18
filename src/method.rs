@@ -112,4 +112,25 @@ mod tests {
             );
         }
     }
+
+    /// parse_bool accepts the documented truthy/falsy strings.
+    #[test]
+    fn test_parse_bool() {
+        for v in ["1", "t", "T", "TRUE", "true", "True"] {
+            assert_eq!(parse_bool(v), Some(true), "{v}");
+        }
+        for v in ["0", "f", "F", "FALSE", "false", "False"] {
+            assert_eq!(parse_bool(v), Some(false), "{v}");
+        }
+        for v in ["", "yes", "on", "2", "x"] {
+            assert_eq!(parse_bool(v), None, "{v}");
+        }
+    }
+
+    /// The Method::string_width entry points route through the width scanner.
+    #[test]
+    fn test_method_string_width_extra() {
+        assert_eq!(WidthMethod::GraphemeWidth.string_width("a\u{0300}b"), 2);
+        assert_eq!(WidthMethod::GraphemeWidth.string_width("\u{2029}"), 0);
+    }
 }

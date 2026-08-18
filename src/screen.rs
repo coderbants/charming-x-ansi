@@ -422,4 +422,39 @@ mod tests {
         assert_eq!(tab_stop_report(&[9, 17]), "\x1b[0;9;17;u");
         assert_eq!(cursor_information_report(&[2, 5]), "\x1b[2;5;R");
     }
+
+    /// Alias functions route to their canonical implementations.
+    #[test]
+    fn test_aliases() {
+        assert_eq!(ed(0), erase_display(0));
+        assert_eq!(ed(2), erase_display(2));
+        assert_eq!(el(1), erase_line(1));
+        assert_eq!(su(3), scroll_up(3));
+        assert_eq!(pan_down(3), scroll_up(3));
+        assert_eq!(sd(4), scroll_down(4));
+        assert_eq!(pan_up(4), scroll_down(4));
+        assert_eq!(il(2), insert_line(2));
+        assert_eq!(dl(5), delete_line(5));
+        assert_eq!(decstbm(3, 10), set_top_bottom_margins(3, 10));
+        assert_eq!(decslrm(2, 9), set_left_right_margins(2, 9));
+        assert_eq!(ich(8), insert_character(8));
+        assert_eq!(dch(3), delete_character(3));
+        assert_eq!(tbc(3), tab_clear(3));
+        assert_eq!(decrqpsr(1), request_presentation_state_report(1));
+        assert_eq!(dectabsr(&[9, 17]), tab_stop_report(&[9, 17]));
+        assert_eq!(deccir(&[2, 5]), cursor_information_report(&[2, 5]));
+        assert_eq!(rep(9), repeat_previous_character(9));
+        assert_eq!(set_window_title("hi"), "\x1b]2;hi\x07");
+    }
+
+    /// Boundary handling for margins and scrolling regions.
+    #[test]
+    fn test_margin_boundaries() {
+        assert_eq!(set_left_right_margins(0, 0), "\x1b[;s");
+        assert_eq!(set_left_right_margins(2, 9), "\x1b[2;9s");
+        assert_eq!(set_scrolling_region(-1, -1), "\x1b[0;0r");
+        assert_eq!(set_scrolling_region(2, 9), "\x1b[2;9r");
+        assert_eq!(request_presentation_state_report(1), "\x1b[1$p");
+        assert_eq!(set_window_title(""), "\x1b]2;\x07");
+    }
 }

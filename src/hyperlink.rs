@@ -33,5 +33,8 @@ mod tests {
             set_hyperlink("https://example.com", "id=1"),
             "\x1b]8;id=1;https://example.com\x07"
         );
+        // Empty params still carries the separator.
+        assert_eq!(set_hyperlink("", ""), "\x1b]8;;\x07");
+        assert_eq!(reset_hyperlink(), "\x1b]8;;\x07");
     }
 }

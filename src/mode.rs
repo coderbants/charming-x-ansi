@@ -1464,4 +1464,20 @@ mod tests {
         modes.delete(Mode::from(MODE_ORIGIN));
         assert_eq!(modes.get(Mode::from(MODE_ORIGIN)), ModeSetting(0));
     }
+
+    /// Alias functions route to their canonical implementations.
+    #[test]
+    fn test_mode_aliases() {
+        let m = Mode::from(MODE_CURSOR_KEYS);
+        assert_eq!(sm(&[m]), set_mode(&[m]));
+        assert_eq!(decset(&[m]), set_mode(&[m]));
+        assert_eq!(rm(&[m]), reset_mode(&[m]));
+        assert_eq!(decrst(&[m]), reset_mode(&[m]));
+        assert_eq!(decrqm(m), request_mode(m));
+        assert_eq!(decrpm(m, ModeSetting(1)), report_mode(m, ModeSetting(1)));
+        // Request/report sequence shapes.
+        assert_eq!(request_mode(m), "\x1b[?1$p");
+        assert_eq!(report_mode(m, ModeSetting(1)), "\x1b[?1;1$y");
+        assert_eq!(report_mode(m, ModeSetting(2)), "\x1b[?1;2$y");
+    }
 }

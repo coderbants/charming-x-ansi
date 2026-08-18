@@ -672,4 +672,26 @@ mod tests {
         assert_eq!(set_pointer_shape("default"), "\x1b]22;default\x07");
         assert_eq!(set_pointer_shape("text"), "\x1b]22;text\x07");
     }
+
+    /// Zero and negative coordinates collapse to the home position and empty
+    /// row/column prefixes.
+    #[test]
+    fn test_cursor_zero_and_negative() {
+        assert_eq!(cursor_position(0, 0), "\x1b[H");
+        assert_eq!(cursor_position(0, 5), "\x1b[5;H");
+        assert_eq!(cursor_position(5, 0), "\x1b[;5H");
+        assert_eq!(set_cursor_position(0, 5), "\x1b[5;H");
+        assert_eq!(set_cursor_position(5, 0), "\x1b[;5H");
+        assert_eq!(horizontal_vertical_position(0, 0), "\x1b[;f");
+        assert_eq!(horizontal_vertical_position(0, 5), "\x1b[5;f");
+        assert_eq!(horizontal_vertical_position(5, 0), "\x1b[;5f");
+        assert_eq!(cursor_up(0), "\x1b[A");
+        assert_eq!(cursor_down(0), "\x1b[B");
+        assert_eq!(cursor_forward(0), "\x1b[C");
+        assert_eq!(cursor_backward(0), "\x1b[D");
+        assert_eq!(cursor_next_line(0), "\x1b[E");
+        assert_eq!(cursor_previous_line(0), "\x1b[F");
+        assert_eq!(erase_character(0), "\x1b[X");
+        assert_eq!(erase_character(1), "\x1b[X");
+    }
 }
