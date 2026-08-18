@@ -423,4 +423,134 @@ mod tests {
         assert_eq!(first_grapheme_cluster("a\u{0300}b"), Some("a\u{0300}"));
         assert_eq!(first_grapheme_cluster(""), None);
     }
+
+    /// Exercises the C1-control state-machine branches in string_width_with.
+    #[test]
+    fn test_string_width_state_machine() {
+        // Ground -> Dcs via C1 0x90.
+        assert_eq!(string_width("\u{0090}abc\x1b\\"), 0);
+        // Ground -> Str via C1 0x98/0x9e/0x9f.
+        assert_eq!(string_width("\u{0098}abc\x1b\\"), 0);
+        assert_eq!(string_width("\u{009e}abc\x1b\\"), 0);
+        assert_eq!(string_width("\u{009f}abc\x1b\\"), 0);
+        // Esc followed by ESC stays in Esc.
+        assert_eq!(string_width("\x1b\x1b[mabc"), 3);
+        // Esc -> Str via X/^/_.
+        assert_eq!(string_width("\x1bXabc\x1b\\"), 0);
+        assert_eq!(string_width("\x1b^abc\x1b\\"), 0);
+        assert_eq!(string_width("\x1b_abc\x1b\\"), 0);
+        // Esc -> Ground via C1 controls (the C1 then starts its own sequence).
+        assert_eq!(string_width("\x1b\u{0090}abc\x1b\\"), 0);
+        assert_eq!(string_width("\x1b\u{0098}abc\x1b\\"), 0);
+        // Esc -> EscInter via 0x20..=0x2f (first 0x30..0x7e is the final byte).
+        assert_eq!(string_width("\x1b abc"), 2);
+        // Esc -> Ground via 0x80..=0x9f.
+        assert_eq!(string_width("\x1b\u{0080}abc"), 3);
+        // Esc C0 control is skipped (stays in Esc; 'a' is the final byte).
+        assert_eq!(string_width("\x1b\x07abc"), 2);
+        // Esc default -> Ground.
+        assert_eq!(string_width("\x1bQabc"), 3);
+        // EscInter -> Esc via ESC.
+        assert_eq!(string_width("\x1b \x1b[mabc"), 3);
+        // EscInter -> Ground via C1 (unconsumed C1 opens a DCS that eats "abc").
+        assert_eq!(string_width("\x1b \u{0090}abc"), 0);
+        // EscInter -> Ground via 0x30..=0x7e ('a' is the final byte).
+        assert_eq!(string_width("\x1b a"), 0);
+        // EscInter -> Ground via C1 0x80-0x9f.
+        assert_eq!(string_width("\x1b \u{0080}abc"), 3);
+        // EscInter C0 skipped ('a' is still the final byte).
+        assert_eq!(string_width("\x1b \x07abc"), 2);
+        // EscInter default (UTF-8 lead bytes stay in EscInter, no width).
+        assert_eq!(string_width("\x1b 漢字"), 0);
+        // Csi -> Esc via ESC.
+        assert_eq!(string_width("\x1b[\x1b[mabc"), 3);
+        // Csi -> Ground via C1 (unconsumed C1 opens a DCS).
+        assert_eq!(string_width("\x1b[\u{0090}abc"), 0);
+        // Csi final byte (0x40..=0x7e).
+        assert_eq!(string_width("\x1b[31mabc"), 3);
+        // Csi -> Ground via CAN/SUB/ST.
+        assert_eq!(string_width("\x1b[\x18abc"), 3);
+        assert_eq!(string_width("\x1b[\x1aabc"), 3);
+        // Csi -> Ground via C1.
+        assert_eq!(string_width("\x1b[\u{0080}abc"), 3);
+        // Csi C0 skipped ('a' is the final byte).
+        assert_eq!(string_width("\x1b[\x07abc"), 2);
+        // Csi default (UTF-8 char consumed while staying in Csi).
+        assert_eq!(string_width("\x1b[漢"), 0);
+        // Osc -> Esc via ESC.
+        assert_eq!(string_width("\x1b]2;title\x1b\\abc"), 3);
+        assert_eq!(string_width("\x1b]2;title\x07abc"), 3);
+        // Osc -> Ground via C1 (unconsumed C1 opens a DCS).
+        assert_eq!(string_width("\x1b]2;\u{0090}abc"), 0);
+        // Osc CAN/SUB.
+        assert_eq!(string_width("\x1b]2;\x18abc"), 3);
+        // Osc C1.
+        assert_eq!(string_width("\x1b]2;\u{0080}abc"), 3);
+        // Osc default (UTF-8 inside).
+        assert_eq!(string_width("\x1b]2;漢字\x07abc"), 3);
+        // Str -> Esc via ESC.
+        assert_eq!(string_width("\x1bXabc\x1b\\def"), 3);
+        // Str -> Ground via ST.
+        assert_eq!(string_width("\x1bXabc\u{009c}def"), 3);
+        // Str -> Ground via C1 (unconsumed C1 opens a DCS that eats "def").
+        assert_eq!(string_width("\x1bXabc\u{0090}def"), 0);
+        // Str CAN/SUB.
+        assert_eq!(string_width("\x1bXabc\x18def"), 3);
+        // Str C1.
+        assert_eq!(string_width("\x1bXabc\u{0080}def"), 3);
+        // Str default.
+        assert_eq!(string_width("\x1bX漢字\x1b\\def"), 3);
+        // Dcs -> Esc via ESC (ST).
+        assert_eq!(string_width("\x1bPq#0;2;0\x1b\\abc"), 3);
+        // Dcs -> Ground via ST C1.
+        assert_eq!(string_width("\x1bPq#0\u{009c}abc"), 3);
+        // Dcs -> Ground via C1 (unconsumed C1 reopens a DCS that eats "abc").
+        assert_eq!(string_width("\x1bPq#0\u{0090}abc"), 0);
+        // Dcs CAN/SUB.
+        assert_eq!(string_width("\x1bPq#0\x18abc"), 3);
+        // Dcs C1.
+        assert_eq!(string_width("\x1bPq#0\u{0080}abc"), 3);
+        // Dcs default.
+        assert_eq!(string_width("\x1bP漢字\x1b\\abc"), 3);
+    }
+
+    /// The wide-character variant covers the same state machine via WcWidth.
+    #[test]
+    fn test_string_width_wc_state_machine() {
+        assert_eq!(string_width_wc("\x1b[31mabc"), 3);
+        assert_eq!(string_width_wc("\x1b]2;title\x07abc"), 3);
+        assert_eq!(string_width_wc("\x1bPq#0\x1b\\abc"), 3);
+        assert_eq!(string_width_wc("\u{0098}abc\x1b\\"), 0);
+        assert_eq!(string_width_wc("\x1bX漢字\x1b\\def"), 3);
+    }
+
+    /// RUNEWIDTH_EASTASIAN toggles the wide/ambiguous-width paths via a child
+    /// process (the env is read once through a OnceLock).
+    #[test]
+    fn test_string_width_east_asian_probe() {
+        use std::process::Command;
+        let out = Command::new(std::env::current_exe().unwrap())
+            .env("RUNEWIDTH_EASTASIAN", "true")
+            .env("XANSI_EAST_ASIAN_PROBE", "1")
+            .args(["--exact", "probe_string_width_east_asian", "--nocapture"])
+            .output()
+            .expect("spawn");
+        assert!(out.status.success(), "probe failed: {out:?}");
+    }
+
+    /// Probe: RUNEWIDTH_EASTASIAN must be set before the OnceLock initializes.
+    #[test]
+    fn probe_string_width_east_asian() {
+        if std::env::var("XANSI_EAST_ASIAN_PROBE").is_err() {
+            return;
+        }
+        // Ambiguous-width rune: U+00A1 (¡) is narrow (1) by default but wide
+        // (2) under RUNEWIDTH_EASTASIAN in the CJK paths.
+        let w = string_width("¡");
+        assert!(w == 1 || w == 2, "unexpected width {w}");
+        let wc = string_width_wc("¡");
+        assert!(wc == 1 || wc == 2, "unexpected wc width {wc}");
+        let _ = grapheme_width("¡");
+        let _ = wc_width("¡");
+    }
 }
