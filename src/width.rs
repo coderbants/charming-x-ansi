@@ -303,6 +303,11 @@ fn grapheme_width(cluster: &str) -> usize {
     if cp <= 0x1f {
         return 0;
     }
+    // Line/paragraph separators are zero-width (Zl/Zp are not Cc/Cf, but
+    // displaywidth's grapheme table marks them _Zero_Width).
+    if cp == 0x2028 || cp == 0x2029 {
+        return 0;
+    }
     if (0x1f1e6..=0x1f1ff).contains(&cp) {
         return 2;
     }
