@@ -358,4 +358,87 @@ mod tests {
         assert_eq!(convert_16(255, 0, 0), 9);
         assert_eq!(ansi256_to_16(240), 8);
     }
+
+    /// Ported from upstream `TestHexTo256` (via `Convert256`).
+    #[test]
+    fn test_hex_to_256() {
+        let cases = [
+            ((255u8, 255u8, 255u8), 231), // white
+            ((238, 238, 238), 255),       // offwhite
+            ((242, 242, 242), 255),       // slightly brighter than offwhite
+            ((255, 0, 0), 196),           // red
+            ((175, 175, 175), 145),       // silver foil
+            ((178, 178, 178), 249),       // silver chalice
+            ((176, 176, 176), 145),       // slightly closer to silver foil
+            ((177, 177, 177), 249),       // slightly closer to silver chalice
+            ((128, 128, 128), 244),       // gray
+            ((0, 0, 0), 16),              // black
+        ];
+        for (rgb, expected) in cases {
+            assert_eq!(
+                convert_256(rgb.0, rgb.1, rgb.2),
+                expected,
+                "Convert256({rgb:?})"
+            );
+        }
+    }
+
+    /// Ported from upstream `TestAnsiToRGB` and the cube/gray palette.
+    #[test]
+    fn test_indexed_rgb() {
+        assert_eq!(indexed_rgb(0), (0, 0, 0)); // black
+        assert_eq!(indexed_rgb(1), (128, 0, 0)); // red
+        assert_eq!(indexed_rgb(255), (238, 238, 238)); // highest grayscale
+        assert_eq!(indexed_rgb(16), (0, 0, 0)); // color cube start
+        assert_eq!(indexed_rgb(21), (0, 0, 255)); // blue cube
+        assert_eq!(indexed_rgb(196), (255, 0, 0)); // red cube
+        assert_eq!(indexed_rgb(46), (0, 255, 0)); // green cube
+        assert_eq!(indexed_rgb(231), (255, 255, 255)); // white cube
+        assert_eq!(indexed_rgb(232), (8, 8, 8)); // grayscale ramp start
+    }
+
+    /// indexed_rgb -> convert_256 roundtrips and cube boundaries.
+    #[test]
+    fn test_ansi256_roundtrip() {
+        // indexed_rgb -> convert_256 roundtrip on gray values.
+        for i in 0..=23 {
+            let (r, g, b) = indexed_rgb(232 + i);
+            assert_eq!(convert_256(r, g, b), 232 + i, "gray index {i}");
+        }
+        // to6_cube boundaries.
+        assert_eq!(to6_cube(0), 0);
+        assert_eq!(to6_cube(47), 0);
+        assert_eq!(to6_cube(48), 1);
+        assert_eq!(to6_cube(114), 1);
+        assert_eq!(to6_cube(115), 2);
+        assert_eq!(to6_cube(255), 5);
+    }
+
+    /// The HSLuv distance math used by convert_256 is deterministic for
+    /// representative inputs (matching the upstream go-colorful DistanceHSLuv).
+    #[test]
+    fn test_hsluv_math() {
+        // Pure red vs pure red -> 0.
+        let d = hsluv_distance(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+        assert_eq!(d, 0.0);
+        // White vs black is a large distance.
+        let d = hsluv_distance(1.0, 1.0, 1.0, 0.0, 0.0, 0.0);
+        assert!(d > 0.5, "got {d}");
+        // Red vs green is non-zero.
+        let d = hsluv_distance(1.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+        assert!(d > 0.1, "got {d}");
+        // The bounds/length helpers are finite.
+        let bounds = get_bounds(50.0);
+        for pair in bounds {
+            assert!(pair[0].is_finite());
+            assert!(pair[1].is_finite());
+        }
+        let m = max_chroma_for_lh(50.0, 30.0);
+        assert!(m.is_finite() && m > 0.0, "got {m}");
+        let l = length_of_ray_until_intersect(0.5, 0.2, 0.3);
+        assert!(l.is_finite(), "got {l}");
+        // xyz_to_uv with a zero denominator.
+        let (u, v) = xyz_to_uv(0.0, 0.0, 0.0);
+        assert_eq!((u, v), (0.0, 0.0));
+    }
 }
