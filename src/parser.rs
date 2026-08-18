@@ -2443,4 +2443,420 @@ mod tests {
         assert_eq!(state_name(GROUND_STATE), "GroundState");
         assert_eq!(state_name(UTF8_STATE), "Utf8State");
     }
+
+    /// Ported from upstream `TestDecodeSequence`: sequence boundary table.
+    #[test]
+    fn test_decode_sequence_table() {
+        type Case<'a> = (&'a str, Vec<(&'a [u8], usize, usize)>);
+        let cases: &[Case] = &[
+            ("single byte", vec![(b"\x1b".as_slice(), 1, 0)]),
+            ("single byte 2", vec![(b"\x00".as_slice(), 1, 0)]),
+            ("ASCII printable", vec![(b"a".as_slice(), 1, 1)]),
+            ("ASCII space", vec![(b" ".as_slice(), 1, 1)]),
+            ("ASCII DEL", vec![(b"\x7f".as_slice(), 1, 0)]),
+            (
+                "double ESC",
+                vec![(b"\x1b".as_slice(), 1, 0), (b"\x1b".as_slice(), 1, 0)],
+            ),
+            (
+                "double ST",
+                vec![(b"\x1b\\".as_slice(), 2, 0), (b"\x1b\\".as_slice(), 2, 0)],
+            ),
+            (
+                "double ST 8-bit",
+                vec![(b"\x9c".as_slice(), 1, 0), (b"\x9c".as_slice(), 1, 0)],
+            ),
+            (
+                "SS3",
+                vec![(b"\x1bO".as_slice(), 2, 0), (b"a".as_slice(), 1, 1)],
+            ),
+            (
+                "SS3 8-bit",
+                vec![(b"\x8f".as_slice(), 1, 0), (b"a".as_slice(), 1, 1)],
+            ),
+            (
+                "CSI style sequence",
+                vec![(b"\x1b[1;2;3m".as_slice(), 8, 0)],
+            ),
+            ("rune", vec![(b"\xf0\x9f\x91\x8b".as_slice(), 4, 2)]),
+            (
+                "ESC followed by C0",
+                vec![
+                    (b"\x1b[".as_slice(), 2, 0),
+                    (b"\x00".as_slice(), 1, 0),
+                    (b"a".as_slice(), 1, 1),
+                ],
+            ),
+            (
+                "ESC sequence with intermediate",
+                vec![(b"\x1b Q".as_slice(), 3, 0)],
+            ),
+        ];
+        for (name, expected) in cases {
+            let mut state = NORMAL_STATE;
+            // Reconstruct input from expected seqs to avoid string escaping issues.
+            let input: Vec<u8> = expected
+                .iter()
+                .flat_map(|(seq, _, _)| seq.iter().copied())
+                .collect();
+            let mut rest: &[u8] = &input;
+            for (seq, n, width) in expected {
+                let d = decode_sequence(rest, state, None);
+                assert_eq!(d.seq, *seq, "{name}: seq");
+                assert_eq!(d.n, *n, "{name}: n for {:?}", std::str::from_utf8(seq).ok());
+                assert_eq!(d.width, *width, "{name}: width");
+                state = d.state;
+                rest = &rest[d.n..];
+            }
+            assert!(rest.is_empty(), "{name}: leftover {rest:?}");
+        }
+    }
+
+    /// Ported from upstream `TestDecodeSequence`: DCS with embedded DEL/ST.
+    #[test]
+    fn test_decode_dcs_del_and_st() {
+        // DCS with DEL inside data.
+        let input = b"\x1bP1;2+xa\x7fb\x1b\\";
+        let mut p = new_parser();
+        let d = decode_sequence(input, NORMAL_STATE, Some(&mut p));
+        assert_eq!(d.n, input.len());
+        assert_eq!(p.data(), b"a\x7fb");
+        assert_eq!(p.cmd & 0xff, b'x' as i32);
+
+        // ST 8-bit terminates DCS mid-way.
+        let input = b"\x1bP1;2+xa\x9cb\x1b\\";
+        let mut p = new_parser();
+        let d = decode_sequence(input, NORMAL_STATE, Some(&mut p));
+        assert_eq!(d.n, 9);
+        assert_eq!(p.data(), b"a");
+        // The remainder continues normally.
+        let rest = &input[d.n..];
+        let d = decode_sequence(rest, NORMAL_STATE, None);
+        assert_eq!(d.seq, b"b");
+        assert_eq!(d.width, 1);
+    }
+
+    /// Ported from upstream: OSC with 8-bit ST, and ESC sequences following OSC.
+    #[test]
+    fn test_decode_osc_variants() {
+        // 8-bit ST terminator.
+        let input = b"\x1b]11;ff/00/ff\x9c\x1baa\x8fa";
+        let mut p = new_parser();
+        let d = decode_sequence(input, NORMAL_STATE, Some(&mut p));
+        assert_eq!(d.n, 14);
+        assert_eq!(p.cmd, 11);
+
+        // OSC followed by ESC sequence (ESC cancels the string).
+        let input = b"\x1b]11;ff/00/ff\x1b[1;2;3m";
+        let mut p = new_parser();
+        let d = decode_sequence(input, NORMAL_STATE, Some(&mut p));
+        assert_eq!(d.n, 13);
+        assert_eq!(p.cmd, 11);
+
+        // OSC terminated by bare ESC (cancelled at end).
+        let input = b"\x1b]11;ff/00/ff\x1b";
+        let mut p = new_parser();
+        let d = decode_sequence(input, NORMAL_STATE, Some(&mut p));
+        assert_eq!(d.n, 13);
+        assert_eq!(p.cmd, 11);
+
+        // Single-param OSC.
+        let input = b"\x1b]112\x07";
+        let mut p = new_parser();
+        let d = decode_sequence(input, NORMAL_STATE, Some(&mut p));
+        assert_eq!(d.n, input.len());
+        assert_eq!(p.cmd, 112);
+        assert_eq!(p.data(), b"112");
+    }
+
+    /// 8-bit C1 CSI/DCS/OSC/SOS/PM/APC entries.
+    #[test]
+    fn test_decode_c1_sequences() {
+        let mut p = new_parser();
+        let d = decode_sequence(b"\x9b31m", NORMAL_STATE, Some(&mut p));
+        assert_eq!(d.n, 4);
+        let cmd = Cmd(p.command());
+        assert_eq!(cmd.final_(), b'm');
+
+        let mut p = new_parser();
+        let d = decode_sequence(b"\x9d2;title\x9c", NORMAL_STATE, Some(&mut p));
+        assert_eq!(d.n, 9);
+        assert_eq!(p.cmd, 2);
+
+        // CSI with prefix and colon sub-params.
+        let mut p = new_parser();
+        let d = decode_sequence(b"\x1b[?1:2:3m", NORMAL_STATE, Some(&mut p));
+        assert_eq!(d.n, 9);
+        let cmd = Cmd(p.command());
+        assert_eq!(cmd.prefix(), b'?');
+        assert_eq!(cmd.final_(), b'm');
+        let (first, has_more, _) = p.params().param(0, 0);
+        assert_eq!(first, 1);
+        assert!(has_more);
+    }
+
+    /// Unterminated and invalid sequences.
+    #[test]
+    fn test_decode_invalid() {
+        // Unterminated CSI.
+        let input = b"\x1b[1;2;3";
+        let mut p = new_parser();
+        let d = decode_sequence(input, NORMAL_STATE, Some(&mut p));
+        assert_eq!(d.n, input.len());
+
+        // Invalid escape: ESC followed by a byte outside 0x30..=0x7e.
+        let input = b"\x1b\x01";
+        let d = decode_sequence(input, NORMAL_STATE, None);
+        assert_eq!(d.n, 1);
+
+        // Invalid UTF-8 lead byte.
+        let d = decode_sequence(b"\xff", NORMAL_STATE, None);
+        assert_eq!(d.n, 0);
+
+        // Unterminated DCS is consumed fully.
+        let input = b"\x1bP1;2+xa";
+        let mut p = new_parser();
+        let d = decode_sequence(input, NORMAL_STATE, Some(&mut p));
+        assert_eq!(d.n, input.len());
+        assert_eq!(p.data(), b"a");
+    }
+
+    /// Command packing per upstream `TestCommand`.
+    #[test]
+    fn test_command_packing_table() {
+        assert_eq!(command(0, 0, b'A'), b'A' as i32);
+        assert_eq!(
+            command(b'?', 0, b'h'),
+            b'h' as i32 | (b'?' as i32) << PREFIX_SHIFT
+        );
+        assert_eq!(
+            command(0, b' ', b'q'),
+            b'q' as i32 | (b' ' as i32) << INTERMED_SHIFT
+        );
+        assert_eq!(
+            command(b'>', b'(', b'x'),
+            b'x' as i32 | (b'>' as i32) << PREFIX_SHIFT | (b'(' as i32) << INTERMED_SHIFT
+        );
+        assert_eq!(command(0, 0, 11), 11);
+    }
+
+    /// Parameter packing per upstream `TestParameter`.
+    #[test]
+    fn test_parameter_packing_table() {
+        assert_eq!(parameter(1, false), 1);
+        assert_eq!(parameter(1, true), 1 | HAS_MORE_FLAG);
+        assert_eq!(parameter(-1, false), PARAM_MASK);
+        assert_eq!(parameter(-1, true), -1);
+    }
+
+    /// Parser pool and reset behavior.
+    #[test]
+    fn test_parser_pool() {
+        let mut p = get_parser();
+        assert_eq!(p.params_len, 0);
+        put_parser(&mut p);
+    }
+
+    /// utf8_byte_len classification.
+    #[test]
+    fn test_utf8_byte_len() {
+        assert_eq!(utf8_byte_len(0b0111_1111), 1);
+        assert_eq!(utf8_byte_len(0b1100_0000), 2);
+        assert_eq!(utf8_byte_len(0b1110_0000), 3);
+        assert_eq!(utf8_byte_len(0b1111_0000), 4);
+        assert_eq!(utf8_byte_len(0b1111_1000), -1);
+    }
+
+    /// The decode entry points route through the method variants.
+    #[test]
+    fn test_decode_wc_variant() {
+        let d = decode_sequence_wc("😀".as_bytes(), NORMAL_STATE, None);
+        assert_eq!(d.width, 2);
+        let d = decode_sequence("😀".as_bytes(), NORMAL_STATE, None);
+        assert_eq!(d.width, 2);
+    }
+
+    /// The execute helper writes bytes to a sink.
+    #[test]
+    fn test_execute_helper() {
+        let mut out: Vec<u8> = Vec::new();
+        execute(&mut out, "abc").unwrap();
+        assert_eq!(out, b"abc");
+    }
+
+    /// Parser data/param sizing, for_each, and reset.
+    #[test]
+    fn test_parser_configuration() {
+        let mut p = new_parser();
+        // Unlimited data buffer (size 0).
+        p.set_data_size(0);
+        assert_eq!(p.data_len, -1);
+        // Fixed data buffer.
+        p.set_data_size(16);
+        assert_eq!(p.data_len, 0);
+        // Out-of-range param falls back to the default with ok=false.
+        p.params_len = 2;
+        p.params[0] = 10;
+        assert_eq!(p.param(0, 99), (10, true));
+        assert_eq!(p.param(2, 99), (99, false));
+        assert_eq!(p.param(5, 99), (99, false));
+        // for_each iterates params with has_more flags.
+        let mut visited = Vec::new();
+        p.params[0] = parameter(1, true);
+        p.params[1] = parameter(2, false);
+        p.params()
+            .for_each(0, |i, v, has_more| visited.push((i, v, has_more)));
+        assert_eq!(visited, vec![(0, 1, true), (1, 2, false)]);
+        // reset clears to ground state.
+        p.state = CSI_PARAM_STATE;
+        p.reset();
+        assert_eq!(p.state, GROUND_STATE);
+        assert_eq!(p.params_len, 0);
+        assert_eq!(p.cmd, 0);
+        assert_eq!(p.state_name(), "GroundState");
+    }
+
+    /// Parser rune/control accessors.
+    #[test]
+    fn test_parser_rune_and_control() {
+        let mut p = new_parser();
+        // 4-byte rune packed little-endian into cmd.
+        p.cmd = 0xf0_i32 | (0x9f_i32 << 8) | (0x98_i32 << 16) | (0x80_i32 << 24);
+        p.params_len = 4;
+        assert_eq!(p.rune(), '😀');
+        // 1-byte control.
+        p.cmd = 0x05;
+        assert_eq!(p.control(), 0x05);
+        // Invalid rune length.
+        p.cmd = 0xff;
+        p.params_len = 1;
+        assert_eq!(p.rune(), '\u{FFFD}');
+    }
+
+    /// parse_string_cmd decodes the leading digits of the collected data.
+    #[test]
+    fn test_parse_string_cmd_impl() {
+        let mut p = new_parser();
+        p.set_data_size(16);
+        p.data = b"1337;rest".to_vec();
+        p.data_len = 9;
+        p.cmd = MISSING_COMMAND;
+        p.parse_string_cmd();
+        assert_eq!(p.cmd, 1337);
+
+        // Non-digit data does not set the command.
+        let mut p = new_parser();
+        p.set_data_size(16);
+        p.data = b"abc".to_vec();
+        p.data_len = 3;
+        p.cmd = MISSING_COMMAND;
+        p.parse_string_cmd();
+        assert_eq!(p.cmd, MISSING_COMMAND);
+    }
+
+    /// DCS string handling exercises the START/PUT/Dispatch actions.
+    #[test]
+    fn test_parser_dcs_handler() {
+        let mut events = Vec::new();
+        let mut dcs = |cmd: Cmd, params: &[i32], data: &[u8]| {
+            events.push(format!(
+                "dcs:{:?}:{}:{:?}",
+                cmd.0,
+                params.len(),
+                String::from_utf8_lossy(data)
+            ));
+        };
+        let handler = Handler {
+            handle_dcs: Some(&mut dcs),
+            ..Default::default()
+        };
+        let mut p = Parser::with_handler(handler);
+        p.parse(b"\x1bPq#0data\x1b\\");
+        drop(p);
+        assert_eq!(events.len(), 1);
+        assert!(events[0].starts_with("dcs:"));
+        assert!(events[0].contains("data"));
+    }
+
+    /// OSC handlers fire on the command and data.
+    #[test]
+    fn test_parser_osc_handler() {
+        let mut events = Vec::new();
+        let mut osc = |cmd: i32, data: &[u8]| {
+            events.push(format!("osc:{}:{:?}", cmd, String::from_utf8_lossy(data)));
+        };
+        let handler = Handler {
+            handle_osc: Some(&mut osc),
+            ..Default::default()
+        };
+        let mut p = Parser::with_handler(handler);
+        p.parse(b"\x1b]2;title\x07");
+        drop(p);
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0], "osc:2:\"2;title\"");
+    }
+
+    /// C1 string-state sequences reach the handler.
+    #[test]
+    fn test_parser_apc_handler() {
+        let mut events = Vec::new();
+        let mut apc = |data: &[u8]| {
+            events.push(format!("apc:{:?}", String::from_utf8_lossy(data)));
+        };
+        let handler = Handler {
+            handle_apc: Some(&mut apc),
+            ..Default::default()
+        };
+        let mut p = Parser::with_handler(handler);
+        p.parse(b"\x9fpayload\x9c");
+        drop(p);
+        assert_eq!(events.len(), 1);
+        assert!(events[0].starts_with("apc:"));
+    }
+
+    /// OSC with an 8-bit ST terminator.
+    #[test]
+    fn test_parser_osc_st8() {
+        let mut events = Vec::new();
+        let mut osc = |cmd: i32, _: &[u8]| events.push(cmd);
+        let handler = Handler {
+            handle_osc: Some(&mut osc),
+            ..Default::default()
+        };
+        let mut p = Parser::with_handler(handler);
+        p.parse(b"\x9d11;ff/00/ff\x9c");
+        drop(p);
+        assert_eq!(events, vec![11]);
+    }
+
+    /// ESC sequence (two-char, e.g. ESC 7) dispatches a command.
+    #[test]
+    fn test_parser_esc_dispatch() {
+        let mut events = Vec::new();
+        let mut esc = |cmd: Cmd| events.push(format!("esc:{:?}", cmd.0));
+        let handler = Handler {
+            handle_esc: Some(&mut esc),
+            ..Default::default()
+        };
+        let mut p = Parser::with_handler(handler);
+        p.parse(b"\x1b7");
+        drop(p);
+        assert_eq!(events, vec!["esc:55"]);
+    }
+
+    /// OSC command parsing when data does not start with a digit.
+    #[test]
+    fn test_parser_osc_non_numeric() {
+        let mut events = Vec::new();
+        let mut osc = |cmd: i32, _: &[u8]| events.push(cmd);
+        let handler = Handler {
+            handle_osc: Some(&mut osc),
+            ..Default::default()
+        };
+        let mut p = Parser::with_handler(handler);
+        p.parse(b"\x1b]L;abc\x07");
+        drop(p);
+        // The OSC handler fires even with a missing command (no leading digit).
+        assert_eq!(events, vec![MISSING_COMMAND]);
+    }
 }
