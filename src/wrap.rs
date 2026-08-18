@@ -721,6 +721,20 @@ mod tests {
         assert_eq!(string_width("0\u{2029}1"), 2);
     }
 
+    /// take_escape coverage: BEL-terminated OSC and two-char escapes.
+    #[test]
+    fn test_take_escape_edge() {
+        // OSC terminated by BEL inside a wrap.
+        assert_eq!(
+            wrap("\x1b]2;title\x07aaaa", 3, ""),
+            "\x1b]2;title\x07aaa\na"
+        );
+        // Two-char escape (ESC =) is consumed as a single token.
+        assert_eq!(wrap("\x1b=aaaa", 3, ""), "\x1b=aaa\na");
+        // ESC 7 (DECSC) two-char escape.
+        assert_eq!(wrap("\x1b7aaaa", 3, ""), "\x1b7aaa\na");
+    }
+
     #[test]
     fn test_wrap_wide() {
         // Wide-char variant shares the same implementation.

@@ -84,7 +84,7 @@ no file is silently skipped.
 
 | Upstream Go Test File | Rust Equivalent / Status | Notes / Description |
 | :--- | :--- | :--- |
-| `ansi/style_test.go` | `src/style.rs` (tests) | SGR style tests incl. `TestNilColors` (ported at v0.11.7) |
+| `ansi/style_test.go` | `src/style.rs` (tests) | SGR style tests incl. `TestNilColors`, `ReadStyleColor` full suite (RGB/CMY/CMYK/RGBA/indexed/transparent/tolerance), color_seq variants (ported) |
 | `ansi/method_test.go` | `src/method.rs` (tests) | `Method.StringWidth` test table (ported at v0.11.7) |
 | `ansi/color_test.go` | `tests/color_test.rs` | Color conversion tests |
 | `ansi/wrap_test.go` | `tests/wrap_test.rs` | Wrap tests |
@@ -94,7 +94,7 @@ no file is silently skipped.
 | `ansi/mouse_test.go` | `src/mouse.rs` (tests) | Mouse button encoding + SGR sequence tests (ported at v0.11.7) |
 | `ansi/mode_test.go` | `src/mode.rs` (tests) | Mode set/reset/request/report tests (ported at v0.11.7) |
 | `ansi/sgr_test.go` | `src/sgr.rs` (tests) | SGR sequence tests (ported at v0.11.7) |
-| `ansi/parser_test.go` + `parser_*_test.go` | `tests/parser_test.rs` | Parser suite (in progress) |
+| `ansi/parser_test.go` + `parser_*_test.go` | `src/parser.rs` (tests) | Parser suite: DecodeSequence table, DCS/OSC/APC/SOS/PM handlers, C1 8-bit forms, command/param packing, parser config/pool (ported) |
 | `ansi/clipboard_test.go`, `cwd_test.go`, `title_test.go`, `notification_test.go`, `palette_test.go`, `progress_test.go`, `background_test.go`, `urxvt_test.go`, `passthrough_test.go`, `iterm2/*_test.go`, `kitty/*_test.go`, `sixel/*_test.go`, `graphics_test.go` | documented per module | Deferred with their modules |
 
 ## Out-of-Scope Monorepo Modules (not library dependencies)

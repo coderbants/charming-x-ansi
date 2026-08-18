@@ -459,6 +459,22 @@ mod tests {
             })
         );
         assert_eq!(x_parse_color("rgb:ff/00"), None);
+        // 4-digit hex form (#RGBA): alpha nibble ignored.
+        assert_eq!(
+            x_parse_color("#f008"),
+            Some(RGBColor {
+                r: 0xff,
+                g: 0x00,
+                b: 0x00
+            })
+        );
+        // Invalid hex digits produce None.
+        assert_eq!(x_parse_color("#zz0000"), None);
+        assert_eq!(x_parse_color("#zz0"), None);
+        assert_eq!(x_parse_color("#fg0000"), None);
+        // rgb:/rgba: with wrong component counts produce None.
+        assert_eq!(x_parse_color("rgb:ff/00/00/00"), None);
+        assert_eq!(x_parse_color("rgba:ff/00/00"), None);
     }
 
     /// Ported from upstream `TestTruncate`/`TestTruncateLeft` tcases.
@@ -608,5 +624,22 @@ mod tests {
         }
         // cut_left exercises the underlying cut (Go keeps the boundary cell).
         assert_eq!(cut_left("hello world", 6), " world");
+    }
+
+    /// Truncate tail-on-exact-width and tail-on-newline branches.
+    #[test]
+    fn test_truncate_edge_branches() {
+        // Width accounting subtracts the tail width first.
+        assert_eq!(truncate("abcd", 3, "."), "ab.");
+        // Newline at the boundary writes the tail after it.
+        assert_eq!(truncate("ab\ncd", 3, "."), "ab\n.");
+        // Truncate_left with a head prefix keeps the rightmost cells.
+        assert_eq!(truncate_left("hello world", 6, "…"), "…world");
+        assert_eq!(truncate_left("hello world", 0, ""), "hello world");
+        // The head is written verbatim when the boundary is crossed (Go does
+        // not subtract the head width from the budget).
+        assert_eq!(truncate_left("hello world", 2, "xxx"), "xxxllo world");
+        // The grapheme crossing the boundary is written along with the rest.
+        assert_eq!(truncate_left("你你你", 2, "."), ".你你");
     }
 }

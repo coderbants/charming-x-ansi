@@ -492,6 +492,91 @@ mod tests {
         assert_eq!(s.string(), "\x1b[39;49;59m");
     }
 
+    #[test]
+    fn test_color_seq_variants() {
+        // Basic colors: dim and bright.
+        assert_eq!(color_seq(&Color::Basic(1), 3), "31");
+        assert_eq!(color_seq(&Color::Basic(9), 3), "91");
+        assert_eq!(color_seq(&Color::Basic(8), 4), "100");
+        assert_eq!(color_seq(&Color::Basic(15), 4), "107");
+        // Default colors.
+        assert_eq!(color_seq(&Color::Default, 3), "39");
+        assert_eq!(color_seq(&Color::Default, 5), "59");
+        // Indexed colors.
+        assert_eq!(color_seq(&Color::Indexed(196), 3), "38;5;196");
+        assert_eq!(color_seq(&Color::Indexed(42), 4), "48;5;42");
+        // RGB colors.
+        assert_eq!(
+            color_seq(&Color::RGB(RGBColor { r: 1, g: 2, b: 3 }), 3),
+            "38;2;1;2;3"
+        );
+        assert_eq!(
+            color_seq(&Color::RGB(RGBColor { r: 1, g: 2, b: 3 }), 5),
+            "58;2;1;2;3"
+        );
+    }
+
+    #[test]
+    fn test_string_and_styled_edge_cases() {
+        // Empty style renders nothing and styled returns the input unchanged.
+        let s = Style::default();
+        assert_eq!(s.string(), "");
+        assert_eq!(s.styled("hello"), "hello");
+        // All attributes together.
+        let s = Style {
+            bold: true,
+            faint: true,
+            italic: true,
+            underline: true,
+            blink: true,
+            reverse: true,
+            strikethrough: true,
+            fg_color: Some(Color::Indexed(196)),
+            bg_color: Some(Color::RGB(RGBColor { r: 0, g: 0, b: 0 })),
+            ul_color: Some(Color::Basic(1)),
+            underline_style: Underline::Double,
+        };
+        assert_eq!(s.string(), "\x1b[1;2;3;4;5;7;9;38;5;196;48;2;0;0;0;51;21m");
+        // Curly underline with no explicit color.
+        let s = Style {
+            underline: true,
+            underline_style: Underline::Curly,
+            ..Default::default()
+        };
+        assert_eq!(s.string(), "\x1b[4;4:3m");
+        // Dotted/dashed underline styles.
+        let s = Style {
+            underline: true,
+            underline_style: Underline::Dotted,
+            ..Default::default()
+        };
+        assert_eq!(s.string(), "\x1b[4;4:4m");
+        let s = Style {
+            underline: true,
+            underline_style: Underline::Dashed,
+            ..Default::default()
+        };
+        assert_eq!(s.string(), "\x1b[4;4:5m");
+        // Underline::None with underline set emits just the base 4.
+        let s = Style {
+            underline: true,
+            underline_style: Underline::None,
+            ..Default::default()
+        };
+        assert_eq!(s.string(), "\x1b[4m");
+        // RGBColor hex formatting.
+        assert_eq!(
+            RGBColor {
+                r: 0xff,
+                g: 0x00,
+                b: 0xff
+            }
+            .hex(),
+            "#ff00ff"
+        );
+        assert_eq!(RGBColor { r: 1, g: 2, b: 3 }.hex(), "#010203");
+    }
+
     /// Legacy semicolon-separated RGB: 38;2;r;g;b.
     #[test]
     fn test_read_style_color_rgb_semicolon() {
@@ -704,10 +789,25 @@ mod tests {
         // RGB with a missing channel.
         let params = [38, 2, 10, 20, i32::MIN];
         assert_eq!(read_style_color(&params, &mut co), 0);
+        // CMY with too few params.
+        assert_eq!(read_style_color(&[38, 3, 1, 2], &mut co), 0);
+        // CMY with a missing channel.
+        let params = [38, 3, 10, 20, i32::MIN];
+        assert_eq!(read_style_color(&params, &mut co), 0);
         // CMYK with too few params.
         assert_eq!(read_style_color(&[38, 4, 1, 2, 3], &mut co), 0);
+        // CMYK with a missing channel.
+        let params = [38, 4, 10, 20, 30, i32::MIN];
+        assert_eq!(read_style_color(&params, &mut co), 0);
+        // Indexed with too few params.
+        assert_eq!(read_style_color(&[38, 5], &mut co), 0);
         // Indexed with an inconsistent separator.
         let params = [parameter(38, true), parameter(5, false), 234];
+        assert_eq!(read_style_color(&params, &mut co), 0);
+        // RGBA with too few params.
+        assert_eq!(read_style_color(&[38, 6, 1, 2, 3], &mut co), 0);
+        // RGBA with a missing channel.
+        let params = [38, 6, 10, 20, 30, i32::MIN];
         assert_eq!(read_style_color(&params, &mut co), 0);
         // Missing param defaults to 0.
         let params = [38, 2, 10, 20, Param(i32::MAX).0];
@@ -715,5 +815,50 @@ mod tests {
         let n = read_style_color(&params, &mut co);
         assert_eq!(n, 5);
         assert_eq!(co, Some(Color::RGB(RGBColor { r: 10, g: 20, b: 0 })));
+        // Tolerance + tolerance color space (8-param colon form).
+        let params = [
+            parameter(38, true),
+            parameter(2, true),
+            parameter(1, true),
+            parameter(10, true),
+            parameter(20, true),
+            parameter(30, true),
+            parameter(5, true),
+            parameter(7, true),
+            parameter(0, false),
+        ];
+        let mut co = None;
+        let n = read_style_color(&params, &mut co);
+        assert_eq!(n, 9);
+        assert_eq!(
+            co,
+            Some(Color::RGB(RGBColor {
+                r: 10,
+                g: 20,
+                b: 30
+            }))
+        );
+        // Tolerance without tolerance color space (7-param colon form).
+        let params = [
+            parameter(38, true),
+            parameter(2, true),
+            parameter(1, true),
+            parameter(10, true),
+            parameter(20, true),
+            parameter(30, true),
+            parameter(5, true),
+            parameter(0, false),
+        ];
+        let mut co = None;
+        let n = read_style_color(&params, &mut co);
+        assert_eq!(n, 8);
+        assert_eq!(
+            co,
+            Some(Color::RGB(RGBColor {
+                r: 10,
+                g: 20,
+                b: 30
+            }))
+        );
     }
 }

@@ -524,6 +524,19 @@ mod tests {
         assert_eq!(string_width_wc("\x1bX漢字\x1b\\def"), 3);
     }
 
+    /// Zero-width fallthroughs in the width helpers.
+    #[test]
+    fn test_width_zero_width() {
+        // A lone combining mark has zero width in wc_width.
+        assert_eq!(wc_width("\u{0300}"), 0);
+        // A single C0 control is zero width in grapheme mode.
+        assert_eq!(grapheme_width("\x1f"), 0);
+        assert_eq!(grapheme_width("\x7f"), 0);
+        // Esc default -> Ground for a UTF-8 lead byte (0xC0+), then the
+        // rune is measured.
+        assert_eq!(string_width("\x1bà"), 1);
+    }
+
     /// RUNEWIDTH_EASTASIAN toggles the wide/ambiguous-width paths via a child
     /// process (the env is read once through a OnceLock).
     #[test]
